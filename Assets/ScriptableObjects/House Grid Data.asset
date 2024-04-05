@@ -1,0 +1,66 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 753e64a7060067b4289c8274d452a151, type: 3}
+  m_Name: House Grid Data
+  m_EditorClassIdentifier: 
+  enterExitPoints:
+  - centerOffset:
+      xIndex: 2
+      yIndex: 0
+    direction: 1
+  - centerOffset:
+      xIndex: 2
+      yIndex: 1
+    direction: 1
+  buildingGridPoints:
+  - centerOffset:
+      xIndex: 0
+      yIndex: 0
+    canMoveLeft: 0
+    canMoveRight: 0
+    canMoveUp: 0
+    canMoveDown: 0
+  - centerOffset:
+      xIndex: 0
+      yIndex: 1
+    canMoveLeft: 0
+    canMoveRight: 0
+    canMoveUp: 0
+    canMoveDown: 0
+  - centerOffset:
+      xIndex: 1
+      yIndex: 0
+    canMoveLeft: 0
+    canMoveRight: 0
+    canMoveUp: 0
+    canMoveDown: 0
+  - centerOffset:
+      xIndex: 1
+      yIndex: 1
+    canMoveLeft: 0
+    canMoveRight: 0
+    canMoveUp: 0
+    canMoveDown: 0
+  - centerOffset:
+      xIndex: 2
+      yIndex: 0
+    canMoveLeft: 0
+    canMoveRight: 1
+    canMoveUp: 0
+    canMoveDown: 0
+  - centerOffset:
+      xIndex: 2
+      yIndex: 1
+    canMoveLeft: 0
+    canMoveRight: 1
+    canMoveUp: 0
+    canMoveDown: 0

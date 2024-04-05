@@ -1,0 +1,73 @@
+#pragma kernel ResizeTexture;
+#pragma kernel ResizeNormal;
+
+int targetWidth;
+int targetHeight;
+int sourceWidth;
+int sourceHeight;
+float widthRatio;
+float heightRatio;
+
+Texture2D sourceTexture;
+RWTexture2D<float4> targetTexture;
+
+[numthreads(32, 32, 1)]
+void ResizeTexture(uint3 id : SV_DispatchThreadID)
+{
+    if ((int) id.x >= targetWidth || (int) id.y >= targetHeight)
+        return;
+
+    float xCoord = id.x * widthRatio;
+    float yCoord = id.y * heightRatio;
+
+    int left = (int) xCoord;
+    int bottom = (int) yCoord;
+
+    xCoord -= left;
+    yCoord -= bottom;
+
+    int right = left + 1;
+    int top = bottom + 1;
+
+    float4 bottomColor = sourceTexture[int2(left, bottom)] * (1 - xCoord);
+    bottomColor += sourceTexture[int2(right, bottom)] * xCoord;
+    float4 topColor = sourceTexture[int2(left, top)] * (1 - xCoord);
+    topColor += sourceTexture[int2(right, top)] * xCoord;
+    float4 finalColor = bottomColor * (1 - yCoord) + topColor * yCoord;
+    targetTexture[id.xy] = finalColor;
+}
+
+float3 rgbaToNormal(float4 color)
+{
+    // Remap color channels to range [-1, 1]
+    float3 normal = color.xyz * 2.0 - 1.0;
+    
+    return normalize(normal);
+}
+
+[numthreads(32, 32, 1)]
+void ResizeNormal(uint3 id : SV_DispatchThreadID)
+{
+    if ((int) id.x >= targetWidth || (int) id.y >= targetHeight)
+        return;
+
+    float xCoord = id.x * widthRatio;
+    float yCoord = id.y * heightRatio;
+
+    int left = (int) xCoord;
+    int bottom = (int) yCoord;
+
+    xCoord -= left;
+    yCoord -= bottom;
+
+    int right = left + 1;
+    int top = bottom + 1;
+    
+    float4 bottomColor = sourceTexture[int2(left, bottom)] * (1 - xCoord);
+    bottomColor += sourceTexture[int2(right, bottom)] * xCoord;
+    float4 topColor = sourceTexture[int2(left, top)] * (1 - xCoord);
+    topColor += sourceTexture[int2(right, top)] * xCoord;
+    float4 finalColor = bottomColor * (1 - yCoord) + topColor * yCoord;
+    
+    targetTexture[id.xy] = finalColor;
+}
