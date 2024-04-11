@@ -312,7 +312,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cd5ac7d7525a64143bb0fa4473921da4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  chunkMapVisual: {fileID: 0}
+  mapVisual: {fileID: 634649267}
   buildingIndicatorPrefab: {fileID: 1365608221919081116, guid: 7da4994869bc5434c9ce95c804ef0913, type: 3}
   buildingEnterExitIndicatorPrefab: {fileID: 2098497533120109069, guid: 822e82fa1eb1bda43bb68f7e62ee1bdf, type: 3}
   buildingContainer: {fileID: 232388450}
@@ -979,8 +979,8 @@ MonoBehaviour:
   buildingPlacer: {fileID: 232388449}
   chunkWidth: 64
   chunkHeight: 64
-  minRegionSize: 200
-  maxRegionSize: 300
+  minRegionSize: 10
+  maxRegionSize: 15
   fogOfWarRadius: 2
   spawnAttempts: 5
 --- !u!4 &1495274450

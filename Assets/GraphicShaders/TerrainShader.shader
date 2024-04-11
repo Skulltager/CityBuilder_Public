@@ -99,10 +99,10 @@ Shader "TilingTest" {
                 return normalize(n1 * (1 - blendFactor) + n2 * blendFactor);
             }
 
-            ColorAndNormal GetBiomeColorAndNormal(float2 uvCoords, int index)
+            ColorAndNormal GetBiomeColorAndNormal(float2 uvCoords, int xIndex, int yIndex)
             {
-                int clampedIndex = clamp(index, 0, biomeWidth * biomeHeight);
-				int biomeTextureIndex = biomeMap[clampedIndex];
+                int finalIndex = (yIndex + 1) * (biomeWidth + 2) + (xIndex + 1);
+				int biomeTextureIndex = biomeMap[finalIndex];
                 
                 float3 uvCoords3D = float3(uvCoords / unrotatedTextureScale, biomeTextureIndex);
                 float3 uvRotatedCoords3D = float3(-uvCoords.y / rotatedTextureScale, uvCoords.x / rotatedTextureScale, biomeTextureIndex);
@@ -131,8 +131,8 @@ Shader "TilingTest" {
 
             fixed4 frag (v2f input) : SV_TARGET
             {      				
-                int leftIndex = input.uv.x * biomeWidth - 0.5;
-				int bottomIndex = input.uv.y * biomeHeight - 0.5;
+                int leftIndex = floor(input.uv.x * biomeWidth - 0.5);
+				int bottomIndex = floor(input.uv.y * biomeHeight - 0.5);
                  
                 float toCamera = length(_WorldSpaceCameraPos - input.worldPos.xyz);
                 if(showGrid)
@@ -148,17 +148,17 @@ Shader "TilingTest" {
 				int rightIndex = leftIndex + 1;
 				int topIndex = bottomIndex + 1;
                 
-				float uvXInfluence = fmod(input.uv.x * biomeWidth - 0.5, 1);
-				float uvYInfluence = fmod(input.uv.y * biomeHeight - 0.5, 1);
+				float uvXInfluence = fmod(input.uv.x * biomeWidth + 0.5, 1);
+				float uvYInfluence = fmod(input.uv.y * biomeHeight + 0.5, 1);
 
                 uvXInfluence = max(0, min(1, (uvXInfluence - 0.5) / blendDistance + 0.5));
                 uvYInfluence = max(0, min(1, (uvYInfluence - 0.5) / blendDistance + 0.5));
                 
                 float2 scaledUV = float2(input.uv.x * biomeWidth, input.uv.y * biomeHeight);
-				ColorAndNormal bottomLeftColor = GetBiomeColorAndNormal(scaledUV, leftIndex + bottomIndex * biomeWidth);
-				ColorAndNormal bottomRightColor = GetBiomeColorAndNormal(scaledUV, rightIndex + bottomIndex * biomeWidth);
-				ColorAndNormal topLeftColor = GetBiomeColorAndNormal(scaledUV, leftIndex + topIndex * biomeWidth);
-				ColorAndNormal topRightColor = GetBiomeColorAndNormal(scaledUV, rightIndex + topIndex * biomeWidth);
+				ColorAndNormal bottomLeftColor = GetBiomeColorAndNormal(scaledUV, leftIndex, bottomIndex);
+				ColorAndNormal bottomRightColor = GetBiomeColorAndNormal(scaledUV, rightIndex, bottomIndex);
+				ColorAndNormal topLeftColor = GetBiomeColorAndNormal(scaledUV, leftIndex, topIndex);
+				ColorAndNormal topRightColor = GetBiomeColorAndNormal(scaledUV, rightIndex, topIndex);
 
 				float4 textureColor = bottomLeftColor.color * (1 - uvXInfluence) * (1 - uvYInfluence);
 				textureColor += bottomRightColor.color * uvXInfluence * (1 - uvYInfluence);

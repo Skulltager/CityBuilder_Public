@@ -1,6 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Diagnostics;
-using System.Drawing;
 using UnityEngine;
 
 public class ChunkRegionMap
@@ -13,6 +11,7 @@ public class ChunkRegionMap
     private readonly int yGridPositionOffset;
 
     public bool regionsGenerated { private set; get; }
+    public bool adjacentRegionsGenerated { private set; get; }
 
     public int chunkWidth => map.chunkWidth;
     public int chunkHeight => map.chunkHeight;
@@ -21,7 +20,7 @@ public class ChunkRegionMap
     public readonly List<ChunkRegion> regions;
     public readonly ChunkRegion borderRegion;
 
-    private readonly static ChunkRegion NO_REGION_DUMMY;
+    public readonly static ChunkRegion NO_REGION_DUMMY;
     private readonly static CardinalDirection[] DIRECTION_BUFFER;
     private readonly static ChunkRegion[] SWAP_REGION_BUFFER;
 
@@ -239,18 +238,29 @@ public class ChunkRegionMap
             }
         }
 
+
         regionsGenerated = true;
     }
 
-    public void GenerateAdjacentChunkMapRegions()
+    public void GenerateAdjacentRegions()
+    {
+        if (adjacentRegionsGenerated)
+            return;
+
+        adjacentRegionsGenerated = true;
+        foreach (ChunkRegion chunkRegion in regions)
+            chunkRegion.GenerateAndSetAdjacentChunkRegions(map);
+    }
+
+    public void GenerateAdjacentChunkDataMapRegions()
     {
         map.GenerateChunkMapRegions(xChunkPosition - 1, yChunkPosition - 1);
         map.GenerateChunkMapRegions(xChunkPosition, yChunkPosition - 1);
         map.GenerateChunkMapRegions(xChunkPosition + 1, yChunkPosition - 1);
-
+        
         map.GenerateChunkMapRegions(xChunkPosition - 1, yChunkPosition);
         map.GenerateChunkMapRegions(xChunkPosition + 1, yChunkPosition);
-
+        
         map.GenerateChunkMapRegions(xChunkPosition - 1, yChunkPosition + 1);
         map.GenerateChunkMapRegions(xChunkPosition, yChunkPosition + 1);
         map.GenerateChunkMapRegions(xChunkPosition + 1, yChunkPosition + 1);

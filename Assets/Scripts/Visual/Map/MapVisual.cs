@@ -49,4 +49,22 @@ public class MapVisual : DataDrivenBehaviour<Map>
         GameObject.Destroy(instance.gameObject);
         chunkMapVisualInstances.Remove(instance);
     }
+
+    public bool TryGetMouseGridPoint(out Point point, float xOffset, float yOffset)
+    {
+        Plane plane = new Plane(Vector3.up, transform.position.y);
+        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        if (!plane.Raycast(ray, out float distance))
+        {
+            point = default;
+            return false;
+        }
+
+        Vector3 hitPosition = ray.origin + ray.direction * distance;
+        int xIndex = Mathf.FloorToInt(hitPosition.x - transform.position.x + xOffset);
+        int yIndex = Mathf.FloorToInt(hitPosition.z - transform.position.z + yOffset);
+
+        point = new Point(xIndex, yIndex);
+        return true;
+    }
 }

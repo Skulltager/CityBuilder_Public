@@ -8,6 +8,8 @@ public class ChunkMapVisual : DataDrivenBehaviour<ChunkMap>
     private const string PROPERTY_BIOME_MAP = "biomeMap";
     private const string PROPERTY_MAP_WIDTH = "biomeWidth";
     private const string PROPERTY_MAP_HEIGHT = "biomeHeight";
+    private const string PROPERTY_MAP_CHUNK_X_OFFSET = "chunkXOffset";
+    private const string PROPERTY_MAP_CHUNK_Y_OFFSET = "chunkYOffset";
 
     [SerializeField] private BuildingVisual buildingPrefab;
     [SerializeField] private Transform buildingInstancesContainer;
@@ -77,6 +79,8 @@ public class ChunkMapVisual : DataDrivenBehaviour<ChunkMap>
             terrainMaterial.SetInt(PROPERTY_MAP_HEIGHT, newValue.chunkHeight);
 
             fogOfWarMaterial.SetBuffer(PROPERTY_FOG_OF_WAR_MAP, newValue.fogOfWarMapBuffer);
+            fogOfWarMaterial.SetInt(PROPERTY_MAP_CHUNK_X_OFFSET, newValue.xChunkPosition * newValue.chunkWidth);
+            fogOfWarMaterial.SetInt(PROPERTY_MAP_CHUNK_Y_OFFSET, newValue.yChunkPosition * newValue.chunkHeight);
             fogOfWarMaterial.SetInt(PROPERTY_MAP_WIDTH, newValue.chunkWidth);
             fogOfWarMaterial.SetInt(PROPERTY_MAP_HEIGHT, newValue.chunkHeight);
 
@@ -105,17 +109,17 @@ public class ChunkMapVisual : DataDrivenBehaviour<ChunkMap>
     {
         if (oldValue != null)
         {
-            int index = source.point.yIndex + data.chunkWidth * source.point.xIndex;
+            int index = source.localPoint.yIndex + data.chunkWidth * source.localPoint.xIndex;
             GameObject.Destroy(worldResourceVisuals[index]);
             worldResourceVisuals[index] = null;
         }
 
         if (newValue != null)
         {
-            int index = source.point.yIndex + data.chunkWidth * source.point.xIndex;
+            int index = source.localPoint.yIndex + data.chunkWidth * source.localPoint.xIndex;
             GameObject instance = GameObject.Instantiate(newValue.record.ModelVariations[newValue.modelIndex], contentContainer);
             worldResourceVisuals[index] = instance;
-            instance.transform.localPosition = new Vector3(source.point.xIndex + 0.5f, 0, source.point.yIndex + 0.5f);
+            instance.transform.localPosition = new Vector3(source.localPoint.xIndex + 0.5f, 0, source.localPoint.yIndex + 0.5f);
             instance.transform.localRotation = Quaternion.Euler(0, newValue.modelRotation, 0);
         }
     }
@@ -125,49 +129,7 @@ public class ChunkMapVisual : DataDrivenBehaviour<ChunkMap>
         if(Input.GetKeyDown(KeyCode.Y))
         {
             if (data.buildings.Count > 0)
-                data.buildings.RemoveAt(data.buildings.Count - 1);
+                data.buildings[0].RemoveFromMap();
         }
-    }
-
-    public bool TryGetMouseGridPoint(out Point point, float xOffset, float yOffset)
-    {
-        Plane plane = new Plane(Vector3.up, transform.position.y);
-        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-        if (!plane.Raycast(ray, out float distance))
-        {
-            point = default;
-            return false;
-        }
-
-        Vector3 hitPosition = ray.origin + ray.direction * distance;
-        int xIndex = Mathf.FloorToInt(hitPosition.x - transform.position.x + xOffset);
-        int yIndex = Mathf.FloorToInt(hitPosition.z - transform.position.z + yOffset);
-
-        if (xIndex < 0)
-        {
-            point = default;
-            return false;
-        }
-
-        if (yIndex < 0)
-        {
-            point = default;
-            return false;
-        }
-
-        if (xIndex >= data.chunkWidth)
-        {
-            point = default;
-            return false;
-        }
-
-        if (yIndex >= data.chunkHeight)
-        {
-            point = default;
-            return false;
-        }
-
-        point = new Point(xIndex, yIndex);
-        return true;
     }
 }

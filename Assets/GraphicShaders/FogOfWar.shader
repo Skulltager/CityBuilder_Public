@@ -19,6 +19,8 @@
 		StructuredBuffer<float> fogOfWarMap;
 		int biomeWidth;
 		int biomeHeight;
+		int chunkXOffset;
+		int chunkYOffset;
 
 		ENDCG
 		
@@ -47,18 +49,18 @@
                 return output;
             }
 
-            float GetBiomeFogAmount(int index)
+            float GetBiomeFogAmount(int xIndex, int yIndex)
             {
-                int clampedIndex = clamp(index, 0, biomeWidth * biomeHeight);
-                return fogOfWarMap[clampedIndex];
+                int finalIndex = (yIndex + 1) * (biomeWidth + 2) + (xIndex + 1);
+                return fogOfWarMap[finalIndex];
             }
 			
-            bool DepthIsNotSky(float depth)
+            bool DepthIsSky(float depth)
             {
                 #if defined(UNITY_REVERSED_Z)
-                return (depth > 0.0);
+                return (depth <= 0.0);
                 #else
-                return (depth < 1.0);
+                return (depth >= 1.0);
                 #endif
             }
 
@@ -70,8 +72,7 @@
                     depth=depth*2.0-1.0;
                 #endif
 				
-                if (!DepthIsNotSky(depth))
-					clip(-1);
+				clip(DepthIsSky(depth) ? -1 : 1);
 
                 float4 H = float4(screenUV.x*2.0-1.0, (screenUV.y)*2.0-1.0, depth, 1.0);
 
@@ -79,21 +80,26 @@
                 float4 col = D/D.w;
 
 				float2 hitPosition = col.xz;
-                int leftIndex = hitPosition.x - 0.5;
-				int bottomIndex = hitPosition.y - 0.5;
+				hitPosition -= float2(chunkXOffset, chunkYOffset);
+				bool outOfBounds = hitPosition.x < 0 || hitPosition.x >= biomeWidth || hitPosition.y < 0 || hitPosition.y > biomeHeight;
+				clip(outOfBounds ? -1 : 1);
+
+                int leftIndex = floor(hitPosition.x - 0.5);
+				int bottomIndex = floor(hitPosition.y - 0.5);
+
 				int rightIndex = leftIndex + 1;
 				int topIndex = bottomIndex + 1;
 				
-				float uvXInfluence = fmod(hitPosition.x - 0.5, 1);
-				float uvYInfluence = fmod(hitPosition.y - 0.5, 1);
+				float uvXInfluence = hitPosition.x < 0 ? 1 - fmod(abs(hitPosition.x) + 0.5, 1) : fmod(hitPosition.x + 0.5, 1);
+				float uvYInfluence = hitPosition.y < 0 ? 1 - fmod(abs(hitPosition.y) + 0.5, 1) : fmod(hitPosition.y + 0.5, 1);
 				
                 uvXInfluence = max(0, min(1, (uvXInfluence - 0.5) / blendDistance + 0.5));
                 uvYInfluence = max(0, min(1, (uvYInfluence - 0.5) / blendDistance + 0.5));
 				
-				float bottomLeftFogAmount = GetBiomeFogAmount(leftIndex + bottomIndex * biomeWidth);
-				float bottomRightFogAmount = GetBiomeFogAmount(rightIndex + bottomIndex * biomeWidth);
-				float topLeftFogAmount = GetBiomeFogAmount(leftIndex + topIndex * biomeWidth);
-				float topRightFogAmount = GetBiomeFogAmount(rightIndex + topIndex * biomeWidth);
+				float bottomLeftFogAmount = GetBiomeFogAmount(leftIndex, bottomIndex);
+				float bottomRightFogAmount = GetBiomeFogAmount(rightIndex, bottomIndex);
+				float topLeftFogAmount = GetBiomeFogAmount(leftIndex, topIndex);
+				float topRightFogAmount = GetBiomeFogAmount(rightIndex, topIndex);
 				
 				float fogAmount = bottomLeftFogAmount * (1 - uvXInfluence) * (1 - uvYInfluence);
 				fogAmount += bottomRightFogAmount * uvXInfluence * (1 - uvYInfluence);

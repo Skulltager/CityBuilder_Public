@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using SheetCodes;
+using UnityEngine;
 
 public class GameDataManager : MonoBehaviour
 {
@@ -25,11 +26,17 @@ public class GameDataManager : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.P))
             GenerateMap();
 
-        //if (Input.GetKeyDown(KeyCode.O))
-        //    buildingPlacer.data = BuildingIdentifier.House;
-        //
-        //if (Input.GetKeyDown(KeyCode.U))
-        //    buildingPlacer.data = BuildingIdentifier.None;
+        if (Input.GetKeyDown(KeyCode.Y))
+            map.MakeAdjacentRegionVisible(0, 0);
+
+        //if (Input.GetKeyDown(KeyCode.Y))
+        //    map.MakeAdjacentRegionVisible(3, 0);
+
+        if (Input.GetKeyDown(KeyCode.O))
+            buildingPlacer.data = BuildingIdentifier.House;
+        
+        if (Input.GetKeyDown(KeyCode.U))
+            buildingPlacer.data = BuildingIdentifier.None;
     }
 
     private void GenerateMap()
@@ -37,13 +44,8 @@ public class GameDataManager : MonoBehaviour
         DisposeBuffers();
 
         map = new Map(chunkWidth, chunkHeight, minRegionSize, maxRegionSize);
-        for(int x = -1; x <= 1; x++)
-        {
-            for (int y = -1; y <= 1; y++)
-            {
-                map.GenerateChunkMap(x, y);
-            }
-        }
+        map.MakeFirstRegionVisible(0, 0);
+        //map.MakeFirstRegionVisible(3, 0);
         mapVisual.data = map;
 
         Vector2 bottomLeftBounds = new Vector2(-chunkWidth, -chunkHeight);

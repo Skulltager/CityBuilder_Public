@@ -7,8 +7,10 @@ public class ChunkMap
     public readonly ChunkDataMap chunkDataMap;
     public readonly ComputeBuffer biomeTypeMapBuffer;
     public readonly ComputeBuffer fogOfWarMapBuffer;
-    public readonly ChunkMapPoint[] chunkMapPoints;
+    public readonly ChunkMapPoint[,] chunkMapPoints;
     public readonly EventList<Building> buildings;
+
+    public bool usedCheck;
 
     public int chunkWidth => chunkDataMap.chunkWidth;
     public int chunkHeight => chunkDataMap.chunkHeight;
@@ -20,44 +22,40 @@ public class ChunkMap
     {
         this.chunkDataMap = chunkDataMap;
         buildings = new EventList<Building>();
-        biomeTypeMapBuffer = new ComputeBuffer(chunkWidth * chunkWidth, Marshal.SizeOf(typeof(int)));
-        fogOfWarMapBuffer = new ComputeBuffer(chunkWidth * chunkWidth, Marshal.SizeOf(typeof(float)));
+        biomeTypeMapBuffer = new ComputeBuffer(chunkDataMap.biomeTypeMap.Length, Marshal.SizeOf(typeof(int)));
+        fogOfWarMapBuffer = new ComputeBuffer(chunkDataMap.biomeTypeMap.Length, Marshal.SizeOf(typeof(float)));
 
-        chunkMapPoints = new ChunkMapPoint[chunkWidth * chunkHeight];
+        chunkMapPoints = new ChunkMapPoint[chunkWidth, chunkHeight];
 
-        int[] biomeTypeMap = new int[chunkWidth * chunkHeight];
-        float[] fogOfWarMap = new float[chunkWidth * chunkHeight];
+        int[] biomeTypeMap = new int[chunkDataMap.biomeTypeMap.Length];
+        float[] fogOfWarMap = new float[chunkDataMap.biomeTypeMap.Length];
+
+
+        for (int x = 0; x < chunkDataMap.biomeTypeMap.GetLength(0); x++)
+        {
+            for (int y = 0; y < chunkDataMap.biomeTypeMap.GetLength(1); y++)
+            {
+                int index = y * chunkDataMap.biomeTypeMap.GetLength(0) + x;
+                biomeTypeMap[index] = (int)chunkDataMap.biomeTypeMap[x, y];
+                fogOfWarMap[index] = chunkDataMap.fogOfWarMap[x, y].GetFogValue();
+            }
+        }
 
         for (int x = 0; x < chunkWidth; x++)
         {
             for (int y = 0; y < chunkHeight; y++)
             {
-                int index = y * chunkWidth + x;
-                biomeTypeMap[index] = (int)chunkDataMap.biomeTypeMap[x, y];
-                fogOfWarMap[index] = chunkDataMap.fogOfWarMap[x, y] ? 1 : 0;
                 WorldResourceRecord resourceRecord = chunkDataMap.resourceMap[x, y];
 
                 if (resourceRecord != null)
-                    chunkMapPoints[index] = new ChunkMapPoint(new Point(x, y), resourceRecord);
+                    chunkMapPoints[x, y] = new ChunkMapPoint(this, new Point(x, y), resourceRecord);
                 else
-                    chunkMapPoints[index] = new ChunkMapPoint(new Point(x, y));
+                    chunkMapPoints[x, y] = new ChunkMapPoint(this, new Point(x, y));
             }
         }
 
         biomeTypeMapBuffer.SetData(biomeTypeMap);
         fogOfWarMapBuffer.SetData(fogOfWarMap);
-        buildings.onAdd += OnAdd_Building;
-        buildings.onRemove += OnRemove_Building;
-    }
-
-    private void OnAdd_Building(Building item)
-    {
-        item.PlaceOnMap();
-    }
-
-    private void OnRemove_Building(Building item)
-    {
-        item.RemoveFromMap();
     }
 
     public void DisposeBuffers()
@@ -74,13 +72,13 @@ public class ChunkMap
             return false;
         }
 
-        chunkMapPoint = chunkMapPoints[point.yIndex * chunkWidth + point.xIndex];
+        chunkMapPoint = chunkMapPoints[point.xIndex, point.yIndex];
         return true;
     }
 
     public ChunkMapPoint GetChunkMapPoint(Point point)
     {
-        return chunkMapPoints[point.yIndex * chunkWidth + point.xIndex];
+        return chunkMapPoints[point.xIndex, point.yIndex];
     }
 
     public bool IsInBounds(Point point)
@@ -98,5 +96,19 @@ public class ChunkMap
             return false;
 
         return true;
+    }
+
+    public void UpdateFogOfWarBuffer()
+    {
+        float[] fogOfWarMap = new float[chunkDataMap.fogOfWarMap.Length];
+        for (int x = 0; x < chunkDataMap.fogOfWarMap.GetLength(0); x++)
+        {
+            for (int y = 0; y < chunkDataMap.fogOfWarMap.GetLength(1); y++)
+            {
+                int index = y * chunkDataMap.fogOfWarMap.GetLength(0) + x;
+                fogOfWarMap[index] = chunkDataMap.fogOfWarMap[x, y].GetFogValue();
+            }
+        }
+        fogOfWarMapBuffer.SetData(fogOfWarMap);
     }
 }
