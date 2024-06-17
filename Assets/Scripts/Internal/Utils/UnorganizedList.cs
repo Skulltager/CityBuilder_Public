@@ -1,49 +1,50 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 public class UnorganizedList<T>
 {
     private readonly List<T> list;
-    public int count { private set; get; }
+    public int Count { private set; get; }
 
     public UnorganizedList()
     {
         list = new List<T>();
-        count = 0;
+        Count = 0;
     }
 
     public void Add(T item)
     {
-        if (list.Count == count)
+        if (list.Count == Count)
         {
-            count++;
+            Count++;
             list.Add(item);
             return;
         }
 
-        list[count++] = item;
+        list[Count++] = item;
     }
 
     public void Remove(T item)
     {
-        int index = list.IndexOf(item, 0, count);
-        if (index == count - 1)
+        int index = list.IndexOf(item, 0, Count);
+        if (index == Count - 1)
         {
-            count--;
+            Count--;
             return;
         }
 
-        list[index] = list[--count];
+        list[index] = list[--Count];
     }
 
     public void RemoveAt(int index)
     {
-        if (index == count - 1)
+        if (index == Count - 1)
         {
-            count--;
+            Count--;
             return;
         }
 
-        list[index] = list[--count];
+        list[index] = list[--Count];
     }
 
     public T GetItem(int index)
@@ -53,6 +54,11 @@ public class UnorganizedList<T>
 
     public void Shuffle()
     {
-        list.Shuffle(count);
+        list.Shuffle(Count);
+    }
+
+    public void Shuffle(Random random)
+    {
+        list.Shuffle(random, Count);
     }
 }

@@ -1,87 +1,200 @@
 using SheetCodes;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
 using UnityEngine;
 
-public class BuildingPlacer : DataDrivenBehaviour<BuildingIdentifier>
+public class BuildingPlacer : DataDrivenBehaviour<Player>
 {
     [SerializeField] private MapVisual mapVisual;
     [SerializeField] private BuildingIndicator buildingIndicatorPrefab;
     [SerializeField] private BuildingEnterExitIndicator buildingEnterExitIndicatorPrefab;
+    [SerializeField] private HarvestableIndicator harvestableIndicatorPrefab;
     [SerializeField] private Transform buildingContainer;
     [SerializeField] private Transform buildingIndicatorsContainer;
 
     private readonly EventVariable<BuildingPlacer, bool> isViable;
-    private readonly EventVariable<BuildingPlacer, ChunkMapPoint> hoveringPoint;
+
+    private readonly EventVariable<BuildingPlacer, bool> isEnabled;
+    private readonly EventVariable<BuildingPlacer, BuildingRecord> selectedBuilding;
     private readonly EventVariable<BuildingPlacer, CardinalDirection> buildingDirection;
+    private readonly EventVariable<BuildingPlacer, ChunkMapPoint> hoveringPoint;
+
     private readonly List<BuildingIndicator> buildingIndicatorInstances;
     private readonly List<BuildingEnterExitIndicator> buildingEnterExitIndicatorInstances;
+    private readonly List<HarvestableIndicator> harvestableIndicatorInstances;
 
     private GameObject buildingInstance;
-    private BuildingGridSize buildingGridSize;
-    private BuildingRecord buildingRecord;
+    private bool isShowingBuildingIndicators;
+    private BuildingIdentifier buildingInstanceIdentifier;
 
     private BuildingPlacer()
     {
         buildingIndicatorInstances = new List<BuildingIndicator>();
+        isEnabled = new EventVariable<BuildingPlacer, bool>(this, false);
         isViable = new EventVariable<BuildingPlacer, bool>(this, false);
+        selectedBuilding = new EventVariable<BuildingPlacer, BuildingRecord>(this, null);
         buildingEnterExitIndicatorInstances = new List<BuildingEnterExitIndicator>();
         hoveringPoint = new EventVariable<BuildingPlacer, ChunkMapPoint>(this, default);
+        harvestableIndicatorInstances = new List<HarvestableIndicator>();
         buildingDirection = new EventVariable<BuildingPlacer, CardinalDirection>(this, CardinalDirection.Right);
     }
 
-    protected override void OnValueChanged_Data(BuildingIdentifier oldValue, BuildingIdentifier newValue)
+    private void Awake()
     {
-        if (oldValue != BuildingIdentifier.None)
+        isEnabled.onValueChange += OnValueChanged_IsEnabled;
+        selectedBuilding.onValueChange += OnValueChanged_SelectedBuilding;
+        buildingDirection.onValueChange += OnValueChanged_BuildingDirection;
+        hoveringPoint.onValueChange += OnValueChanged_HoveringPoint;
+
+        BuildingOption_Visual.selectedBuildingOption.onValueChange += OnValueChanged_BuildingOption_SelectedBuilding;
+    }
+
+    protected override void OnValueChanged_Data(Player oldValue, Player newValue)
+    {
+        SetBuildingIndicators();
+    }
+
+    private void OnValueChanged_IsEnabled(bool oldValue, bool newValue)
+    {
+        SetBuildingIndicators();
+    }
+
+    private void OnValueChanged_BuildingDirection(CardinalDirection oldValue, CardinalDirection newValue)
+    {
+        SetBuildingIndicators();
+    }
+
+    private void OnValueChanged_HoveringPoint(ChunkMapPoint oldValue, ChunkMapPoint newValue)
+    {
+        SetBuildingIndicators();
+    }
+
+    private void OnValueChanged_SelectedBuilding(BuildingRecord oldValue, BuildingRecord newValue)
+    {
+        SetBuildingIndicators();
+    }
+
+    private void OnValueChanged_BuildingOption_SelectedBuilding(BuildingOption_Visual oldValue, BuildingOption_Visual newValue)
+    {
+        if (newValue != null)
         {
-            GameObject.Destroy(buildingInstance);
-            buildingInstance = null;
+            selectedBuilding.value = newValue.data.record;
+            isEnabled.value = true;
+        }
+        else
+        {
+            selectedBuilding.value = null;
+            isEnabled.value = false;
+        }
+    }
 
-            foreach (BuildingIndicator instance in buildingIndicatorInstances)
-            {
-                instance.viable.onValueChange -= OnValueChanged_BuildingIndicator_IsViable;
-                GameObject.Destroy(instance.gameObject);
-            }
+    private void ClearBuildingIndicators()
+    {
+        if (!isShowingBuildingIndicators)
+            return;
 
-            foreach (BuildingEnterExitIndicator instance in buildingEnterExitIndicatorInstances)
-            {
-                instance.viable.onValueChange -= OnValueChanged_BuildingIndicator_IsViable;
-                GameObject.Destroy(instance.gameObject);
-            }
+        buildingInstanceIdentifier = BuildingIdentifier.None;
+        isShowingBuildingIndicators = false;
 
-            buildingIndicatorInstances.Clear();
-            buildingEnterExitIndicatorInstances.Clear();
-            hoveringPoint.onValueChange -= OnValueChanged_HoveringPoint;
-            buildingDirection.onValueChange -= OnValueChanged_BuildingDirection;
+        GameObject.Destroy(buildingInstance);
+        buildingInstance = null;
+
+        foreach (BuildingIndicator instance in buildingIndicatorInstances)
+        {
+            instance.viable.onValueChange -= OnValueChanged_BuildingIndicator_IsViable;
+            GameObject.Destroy(instance.gameObject);
         }
 
-        if (newValue != BuildingIdentifier.None)
+        foreach (BuildingEnterExitIndicator instance in buildingEnterExitIndicatorInstances)
         {
-            buildingRecord = newValue.GetRecord();
-            buildingGridSize = buildingRecord.BuildingGridData.GetBuildingGridSize();
-            buildingInstance = GameObject.Instantiate(buildingRecord.Model, buildingContainer);
+            instance.viable.onValueChange -= OnValueChanged_BuildingIndicator_IsViable;
+            GameObject.Destroy(instance.gameObject);
+        }
 
-            for(int i = 0; i < buildingRecord.BuildingGridData.buildingGridPoints.Length; i++)
+        foreach(HarvestableIndicator instance in harvestableIndicatorInstances)
+            GameObject.Destroy(instance.gameObject);
+
+
+        buildingIndicatorInstances.Clear();
+        buildingEnterExitIndicatorInstances.Clear();
+        harvestableIndicatorInstances.Clear();
+    }
+
+    private bool ShouldShowBuildingIndicators()
+    {
+        if (!isEnabled.value)
+            return false;
+
+        if (data == null)
+            return false;
+
+        if (selectedBuilding.value == null)
+            return false;
+
+        if (hoveringPoint.value == null)
+            return false;
+
+        return true;
+    }
+
+    private void SetBuildingIndicators()
+    {
+        if (!ShouldShowBuildingIndicators())
+        {
+            ClearBuildingIndicators();
+            return;
+        }
+
+        if (selectedBuilding.value.Identifier != buildingInstanceIdentifier)
+        {
+            ClearBuildingIndicators();
+
+            buildingInstanceIdentifier = selectedBuilding.value.Identifier;
+            isShowingBuildingIndicators = true;
+            buildingInstance = GameObject.Instantiate(selectedBuilding.value.BuildingPlacementPrefab, buildingContainer);
+
+            WorldContentSizeBounds sizeBounds = selectedBuilding.value.BuildingGridData.size.GetSizeBounds(buildingDirection.value);
+
+            for (int x = 0; x < sizeBounds.width; x++)
             {
-                BuildingIndicator instance = GameObject.Instantiate(buildingIndicatorPrefab, buildingIndicatorsContainer);
-                instance.viable.onValueChange += OnValueChanged_BuildingIndicator_IsViable;
-                buildingIndicatorInstances.Add(instance);
+                for (int y = 0; y < sizeBounds.height; y++)
+                {
+                    BuildingIndicator instance = GameObject.Instantiate(buildingIndicatorPrefab, buildingIndicatorsContainer);
+                    instance.viable.onValueChange += OnValueChanged_BuildingIndicator_IsViable;
+                    buildingIndicatorInstances.Add(instance);
+                }
             }
 
-            for(int i = 0; i < buildingRecord.BuildingGridData.enterExitPoints.Length; i++)
+            for (int i = 0; i < selectedBuilding.value.BuildingGridData.enterExitPoints.Length; i++)
             {
                 BuildingEnterExitIndicator instance = GameObject.Instantiate(buildingEnterExitIndicatorPrefab, buildingIndicatorsContainer);
                 instance.viable.onValueChange += OnValueChanged_BuildingIndicator_IsViable;
                 buildingEnterExitIndicatorInstances.Add(instance);
             }
 
-            SetHoverPosition();
-            SetIsViable();
+            int gatheringRange = selectedBuilding.value.GatheringRange;
+            for (int x = -gatheringRange; x < sizeBounds.width + gatheringRange; x++)
+            {
+                int distance;
+                if (x < 0)
+                    distance = gatheringRange + x;
+                else if (x >= sizeBounds.width)
+                    distance = gatheringRange - (x - sizeBounds.width) - 1;
+                else
+                    distance = gatheringRange;
 
-            hoveringPoint.onValueChangeImmediate += OnValueChanged_HoveringPoint;
-            buildingDirection.onValueChangeImmediate += OnValueChanged_BuildingDirection;
+                for (int y = -distance; y < sizeBounds.height + distance; y++)
+                {
+                    if (x >= 0 && x < sizeBounds.width && y >= 0 && y < sizeBounds.height)
+                        continue;
+
+                    HarvestableIndicator instance = GameObject.Instantiate(harvestableIndicatorPrefab, buildingIndicatorsContainer);
+                    harvestableIndicatorInstances.Add(instance);
+                }
+            }
         }
+
+        SetIndicatorPositions();
     }
 
     private void OnValueChanged_BuildingIndicator_IsViable(bool oldValue, bool newValue)
@@ -91,6 +204,18 @@ public class BuildingPlacer : DataDrivenBehaviour<BuildingIdentifier>
 
     private void SetIsViable()
     {
+        if (!isEnabled.value)
+        {
+            isViable.value = false;
+            return;
+        }
+
+        if (data == null)
+        {
+            isViable.value = false;
+            return;
+        }
+
         if (buildingIndicatorInstances.Any(i => !i.viable.value))
         {
             isViable.value = false;
@@ -108,39 +233,43 @@ public class BuildingPlacer : DataDrivenBehaviour<BuildingIdentifier>
 
     private void Update()
     {
-        if (data != BuildingIdentifier.None)
+        if (!isEnabled.value || data == null || selectedBuilding.value == null)
+            return;
+
+        if (Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.R))
         {
-            if (Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.R))
-            {
-                buildingDirection.value = buildingDirection.value.Rotate270Degrees();
-            }
-
-            if (!Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.R))
-            {
-                buildingDirection.value = buildingDirection.value.Rotate90Degrees();
-            }
-
-            SetHoverPosition();
-
-            if (Input.GetMouseButtonDown(0))
-                TryPlaceBuilding();
+            buildingDirection.value = buildingDirection.value.Rotate270Degrees();
         }
+
+        if (!Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.R))
+        {
+            buildingDirection.value = buildingDirection.value.Rotate90Degrees();
+        }
+
+        SetHoverPosition();
+
+        if (Input.GetMouseButtonDown(0))
+            TryPlaceBuilding();
     }
 
     private void TryPlaceBuilding()
     {
-        if (!isViable.value)
+        if (!isViable.value || hoveringPoint.value == null)
             return;
 
-        Building building = new Building(buildingRecord, mapVisual.data, hoveringPoint.value.globalPoint, buildingDirection.value);
-        building.PlaceOnMap(mapVisual.data);
+        GameDataManager.LAST_MOUSE_INTERACTION_HANDLED_MOMENT = Time.time;
+        ChunkMapPointContent_BuildingConstruction construction = new ChunkMapPointContent_BuildingConstruction(mapVisual.data, hoveringPoint.value.globalPoint, buildingDirection.value, selectedBuilding.value, data);
+        construction.PlaceOnMap();
 
-        data = BuildingIdentifier.None;
+        if (!Input.GetKey(KeyCode.LeftShift))
+            BuildingOption_Visual.selectedBuildingOption.value = null;
     }
 
     private void SetHoverPosition()
     {
-        if (mapVisual.TryGetMouseGridPoint(out Point point, -buildingGridSize.currentXOffset + 0.5f, -buildingGridSize.currentYOffset + 0.5f))
+        WorldContentSizeBounds sizeBounds = selectedBuilding.value.BuildingGridData.size.GetSizeBounds(buildingDirection.value);
+
+        if (mapVisual.TryGetMouseGridPoint(-sizeBounds.xCenter + 0.5f, -sizeBounds.yCenter + 0.5f, out Point point))
         {
             ChunkMapPoint mapPoint;
             if (mapVisual.data.TryGetChunkMapPoint(point, out mapPoint))
@@ -152,11 +281,11 @@ public class BuildingPlacer : DataDrivenBehaviour<BuildingIdentifier>
             hoveringPoint.value = null;
     }
 
-    private void OnValueChanged_BuildingDirection(CardinalDirection oldValue, CardinalDirection newValue)
+    private void SetIndicatorPositions()
     {
-        buildingGridSize.SetRotation(newValue);
+        buildingInstance.transform.position = new Vector3(hoveringPoint.value.globalPoint.xIndex, 0, hoveringPoint.value.globalPoint.yIndex);
 
-        switch (newValue)
+        switch (buildingDirection.value)
         {
             case CardinalDirection.Right:
                 buildingInstance.transform.rotation = Quaternion.Euler(0, 0, 0);
@@ -172,155 +301,78 @@ public class BuildingPlacer : DataDrivenBehaviour<BuildingIdentifier>
                 break;
         }
 
-        SetIndicatorPositions();
-    }
+        WorldContentSizeBounds sizeBounds = selectedBuilding.value.BuildingGridData.size.GetSizeBounds(buildingDirection.value);
 
-    private void OnValueChanged_HoveringPoint(ChunkMapPoint oldValue, ChunkMapPoint newValue)
-    {
-        if (newValue != null)
+        int index = 0;
+        for (int x = 0; x < sizeBounds.width; x++)
         {
-            buildingInstance.SetActive(true);
-            buildingInstance.transform.position = new Vector3(newValue.globalPoint.xIndex, 0, newValue.globalPoint.yIndex);
-            SetIndicatorPositions();
-        }
-        else
-        {
-            buildingInstance.SetActive(false);
-            foreach (BuildingIndicator indicator in buildingIndicatorInstances)
-                indicator.data = null;
-
-            foreach (BuildingEnterExitIndicator indicator in buildingEnterExitIndicatorInstances)
-                indicator.data = null;
-        }
-    }
-
-    private void SetIndicatorPositions()
-    {
-        if (hoveringPoint.value == null)
-            return;
-
-        for (int i = 0; i < buildingRecord.BuildingGridData.buildingGridPoints.Length; i++)
-        {
-            BuildingGridPoint gridPoint = buildingRecord.BuildingGridData.buildingGridPoints[i];
-            BuildingIndicator indicator = buildingIndicatorInstances[i];
-            ChunkMapPoint chunkMapPoint = default;
-            bool result = false;
-            switch (buildingDirection.value)
+            for (int y = 0; y < sizeBounds.height; y++)
             {
-                case CardinalDirection.Right:
-                    result = mapVisual.data.TryGetChunkMapPoint(gridPoint.centerOffset + hoveringPoint.value.globalPoint, out chunkMapPoint);
-                    break;
-                case CardinalDirection.Bottom:
-                    result = mapVisual.data.TryGetChunkMapPoint(gridPoint.centerOffset.GetRotated90DegreesOffset() + hoveringPoint.value.globalPoint.AddDirection(CardinalDirection.Bottom), out chunkMapPoint);
-                    break;
-                case CardinalDirection.Left:
-                    result = mapVisual.data.TryGetChunkMapPoint(gridPoint.centerOffset.GetRotated180DegreesOffset() + hoveringPoint.value.globalPoint.AddDirection(DiagonalDirection.BottomLeft), out chunkMapPoint);
-                    break;
-                case CardinalDirection.Top:
-                    result = mapVisual.data.TryGetChunkMapPoint(gridPoint.centerOffset.GetRotated270DegreesOffset() + hoveringPoint.value.globalPoint.AddDirection(CardinalDirection.Left), out chunkMapPoint);
-                    break;
-            }
+                Point globalPoint = new Point(x + sizeBounds.xOffset, y + sizeBounds.yOffset) + hoveringPoint.value.globalPoint;
 
-            if(result)
-                indicator.data = chunkMapPoint;
-            else
-                indicator.data = null;
+                BuildingIndicator indicator = buildingIndicatorInstances[index];
+
+                ChunkMapPoint chunkMapPoint;
+                if (mapVisual.data.TryGetChunkMapPoint(globalPoint, out chunkMapPoint))
+                    indicator.data = new BuildingIndicatorData(data, chunkMapPoint);
+                else
+                    indicator.data = null;
+
+                index++;
+            }
         }
 
-        for (int i = 0; i < buildingRecord.BuildingGridData.enterExitPoints.Length; i++)
+        for (int i = 0; i < selectedBuilding.value.BuildingGridData.enterExitPoints.Length; i++)
         {
-            BuildingEnterExitGridPoint gridPoint = buildingRecord.BuildingGridData.enterExitPoints[i];
+            BuildingEnterExitGridPoint gridPoint = selectedBuilding.value.BuildingGridData.enterExitPoints[i];
             BuildingEnterExitIndicator indicator = buildingEnterExitIndicatorInstances[i];
 
-            Point enterExitPoint = default;
-            CardinalDirection enterExitDirection = default;
-
-            switch (buildingDirection.value)
-            {
-                case CardinalDirection.Right:
-                    enterExitPoint = gridPoint.centerOffset + hoveringPoint.value.globalPoint;
-                    switch (gridPoint.direction)
-                    {
-                        case CardinalDirection.Right:
-                            enterExitDirection = CardinalDirection.Right;
-                            break;
-                        case CardinalDirection.Bottom:
-                            enterExitDirection = CardinalDirection.Bottom ;
-                            enterExitPoint = enterExitPoint.AddDirection(CardinalDirection.Bottom);
-                            break;
-                        case CardinalDirection.Left:
-                            enterExitDirection = CardinalDirection.Left;
-                            enterExitPoint = enterExitPoint.AddDirection(CardinalDirection.Left);
-                            break;
-                        case CardinalDirection.Top:
-                            enterExitDirection = CardinalDirection.Top;
-                            enterExitPoint = enterExitPoint.AddDirection(CardinalDirection.Top);
-                            break;
-                    }
-                    break;
-                case CardinalDirection.Bottom:
-                    enterExitPoint = gridPoint.centerOffset.GetRotated90DegreesOffset() + hoveringPoint.value.globalPoint.AddDirection(CardinalDirection.Bottom);
-                    switch (gridPoint.direction)
-                    {
-                        case CardinalDirection.Right:
-                            enterExitDirection = CardinalDirection.Bottom;
-                            break;
-                        case CardinalDirection.Bottom:
-                            enterExitDirection = CardinalDirection.Left;
-                            break;
-                        case CardinalDirection.Left:
-                            enterExitDirection = CardinalDirection.Top;
-                            break;
-                        case CardinalDirection.Top:
-                            enterExitDirection = CardinalDirection.Right;
-                            break;
-                    }
-                    break;
-                case CardinalDirection.Left:
-                    enterExitPoint = gridPoint.centerOffset.GetRotated180DegreesOffset() + hoveringPoint.value.globalPoint.AddDirection(DiagonalDirection.BottomLeft);
-                    switch (gridPoint.direction)
-                    {
-                        case CardinalDirection.Right:
-                            enterExitDirection = CardinalDirection.Left;
-                            break;
-                        case CardinalDirection.Bottom:
-                            enterExitDirection = CardinalDirection.Top;
-                            break;
-                        case CardinalDirection.Left:
-                            enterExitDirection = CardinalDirection.Right;
-                            break;
-                        case CardinalDirection.Top:
-                            enterExitDirection = CardinalDirection.Bottom;
-                            break;
-                    }
-                    break;
-                case CardinalDirection.Top:
-                    enterExitPoint = gridPoint.centerOffset.GetRotated270DegreesOffset() + hoveringPoint.value.globalPoint.AddDirection(CardinalDirection.Left);
-                    switch (gridPoint.direction)
-                    {
-                        case CardinalDirection.Right:
-                            enterExitDirection = CardinalDirection.Top;
-                            break;
-                        case CardinalDirection.Bottom:
-                            enterExitDirection = CardinalDirection.Right;
-                            break;
-                        case CardinalDirection.Left:
-                            enterExitDirection = CardinalDirection.Bottom;
-                            break;
-                        case CardinalDirection.Top:
-                            enterExitDirection = CardinalDirection.Left;
-                            break;
-                    }
-                    break;
-            }
-
-            enterExitPoint = enterExitPoint.AddDirection(enterExitDirection);
+            CardinalDirection enterExitDirection = gridPoint.direction.RotateByDirection(buildingDirection.value);
+            Point enterExitPoint = gridPoint.centerOffset.RotateByDirection(buildingDirection.value).AddDirection(enterExitDirection) + hoveringPoint.value.globalPoint;
 
             ChunkMapPoint chunkMapPoint;
             if (mapVisual.data.TryGetChunkMapPoint(enterExitPoint, out chunkMapPoint))
-                indicator.data = new BuildingEnterExitIndicatorData(chunkMapPoint, enterExitDirection);
+                indicator.data = new BuildingEnterExitIndicatorData(data, chunkMapPoint, enterExitDirection);
             else
                 indicator.data = null;
         }
+
+        index = 0;
+        int gatheringRange = selectedBuilding.value.GatheringRange;
+        for (int x = -gatheringRange; x < sizeBounds.width + gatheringRange; x++)
+        {
+            int distance;
+            if (x < 0)
+                distance = gatheringRange + x;
+            else if (x >= sizeBounds.width)
+                distance = gatheringRange - (x - sizeBounds.width) - 1;
+            else
+                distance = gatheringRange;
+
+            for (int y = -distance; y < sizeBounds.height + distance; y++)
+            {
+                if (x >= 0 && x < sizeBounds.width && y >= 0 && y < sizeBounds.height)
+                    continue;
+
+                HarvestableIndicator indicator = harvestableIndicatorInstances[index];
+                Point globalPoint = new Point(x + sizeBounds.xOffset, y + sizeBounds.yOffset) + hoveringPoint.value.globalPoint;
+                ChunkMapPoint chunkMapPoint;
+                if (mapVisual.data.TryGetChunkMapPoint(globalPoint, out chunkMapPoint))
+                    indicator.data = new HarvestableIndicatorData(data, chunkMapPoint, selectedBuilding.value.GatherableType);
+                else
+                    indicator.data = null;
+                index++;
+            }
+        }
+    }
+
+    private void OnDestroy()
+    {
+        isEnabled.onValueChange -= OnValueChanged_IsEnabled;
+        selectedBuilding.onValueChange -= OnValueChanged_SelectedBuilding;
+        buildingDirection.onValueChange -= OnValueChanged_BuildingDirection;
+        hoveringPoint.onValueChange -= OnValueChanged_HoveringPoint;
+
+        BuildingOption_Visual.selectedBuildingOption.onValueChange -= OnValueChanged_BuildingOption_SelectedBuilding;
     }
 }

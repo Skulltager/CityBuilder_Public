@@ -19,9 +19,34 @@ MonoBehaviour:
     - {fileID: 8314834085963394654, guid: fb5922c35c7d2e34e83a0a8426cedc5c, type: 3}
     - {fileID: 1159503921907369549, guid: 1c0c70b65fe9d9447b19bd276de32948, type: 3}
     - {fileID: 8766428596654754112, guid: c601c2a90abcf2846bf05af35aed8f0d, type: 3}
+    _material:
+    - {fileID: 2100000, guid: 69a2b63d136632646a7f0b1c52f51bea, type: 2}
+    _resourceDrops: 3
+    _harvestDuration: 2.5
+    _resourceType: 0
+    _name: Small Tree
+    _timesHarvestable: 120
+    _icon: {fileID: 21300000, guid: 2918e74d93e864616991a99e356afb23, type: 3}
   - identifier: 2
     _modelVariations:
     - {fileID: 4660086029845765591, guid: 6db354f0ea735a342a72ee0ce8cd24f3, type: 3}
+    _material:
+    - {fileID: 2100000, guid: 68d2564cb11ae5147a798cb450769465, type: 2}
+    - {fileID: 2100000, guid: 024998f95d5fcc04a9ac50c07e5c9ea4, type: 2}
+    _resourceDrops: 1
+    _harvestDuration: 3
+    _resourceType: 2
+    _name: Small Iron Rock
+    _timesHarvestable: 80
+    _icon: {fileID: 21300000, guid: 1e8b9faa3cdab7d44ae54938be86cdc2, type: 3}
   - identifier: 3
     _modelVariations:
     - {fileID: 159366834914499358, guid: 0df3d3d2aa4d1174e94d3871248170f0, type: 3}
+    _material:
+    - {fileID: 2100000, guid: 69a2b63d136632646a7f0b1c52f51bea, type: 2}
+    _resourceDrops: 2
+    _harvestDuration: 2
+    _resourceType: 3
+    _name: Small Berry Bush
+    _timesHarvestable: 200
+    _icon: {fileID: 21300000, guid: 050dcd53d35ca43ada41e4f2b126c69b, type: 3}

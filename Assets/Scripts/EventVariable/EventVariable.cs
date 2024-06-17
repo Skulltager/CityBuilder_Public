@@ -3,6 +3,7 @@
 public class EventVariable<TSource, TValue>
 {
     protected bool triggerSameValue;
+    protected bool ignoreEventStack;
     protected readonly TSource source;
     protected TValue _value;
     public TValue eventStackValue { protected set; get; }
@@ -23,14 +24,22 @@ public class EventVariable<TSource, TValue>
             
             _value = value;
 
-            EventVariableProperties<TSource, TValue> eventProperty = new EventVariableProperties<TSource, TValue>(this, source, _value);
-            EventVariableManager.instance.AddEvent(eventProperty);
+            if (ignoreEventStack)
+            {
+                TriggerOnValueChange(source, _value);
+            }
+            else
+            {
+                EventVariableProperties<TSource, TValue> eventProperty = new EventVariableProperties<TSource, TValue>(this, source, _value);
+                EventVariableManager.instance.AddEvent(eventProperty);
+            }
         }
     }
 
-    public EventVariable(TSource source, TValue startValue, bool triggerSameValue = false)
+    public EventVariable(TSource source, TValue startValue, bool ignoreEventStack = false, bool triggerSameValue = false)
     {
         this.triggerSameValue = triggerSameValue;
+        this.ignoreEventStack = ignoreEventStack;
         this._value = startValue;
         this.eventStackValue = startValue;
         this.source = source;

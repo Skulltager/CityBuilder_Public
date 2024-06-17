@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b71af71ae178eb4197002d2c46a4188, type: 3}
+  m_Name: Resources
+  m_EditorClassIdentifier: 
+  records:
+  - identifier: 1
+    _name: Iron Ore
+    _prefab: {fileID: 6405705544338099496, guid: b55a38380e4777848b47b1a0091d0d12, type: 3}
+    _sprite: {fileID: 21300000, guid: 1d502d64599815443a2ba29ccc8fc1a3, type: 3}
+    _type: 2
+  - identifier: 2
+    _name: Berries
+    _prefab: {fileID: 7743235574243716760, guid: c5eb3f099c8315c44a0dd8f621b32a02, type: 3}
+    _sprite: {fileID: 21300000, guid: 9c7dada06a60a8e4e92c6b69b3562c4d, type: 3}
+    _type: 3
+  - identifier: 3
+    _name: Wood
+    _prefab: {fileID: 9130893131678821164, guid: c816862c60e816b4f9a2226daebc3ce0, type: 3}
+    _sprite: {fileID: 21300000, guid: 464c8e919b3731244841a86f766d4ce4, type: 3}
+    _type: 0
+  - identifier: 4
+    _name: Iron Bars
+    _prefab: {fileID: 2699397032055908455, guid: ceef6a143b6fe0f418347d81af4d593e, type: 3}
+    _sprite: {fileID: 21300000, guid: 7a519e1960f37d8498b2e5d91b34e65d, type: 3}
+    _type: 4
+  - identifier: 5
+    _name: Planks
+    _prefab: {fileID: 2699397032055908455, guid: 4710b336b4870604c956801a0ac2a22e, type: 3}
+    _sprite: {fileID: 21300000, guid: eeb6d2b8362336a4e88ddaf84539ec11, type: 3}
+    _type: 4
+  - identifier: 6
+    _name: Tools
+    _prefab: {fileID: 2699397032055908455, guid: 78f872700639b834abc08aa87f0c458b, type: 3}
+    _sprite: {fileID: 21300000, guid: 40fa56aa725215d458e370bffb5d7899, type: 3}
+    _type: 5

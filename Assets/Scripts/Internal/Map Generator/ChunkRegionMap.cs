@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using SheetCodes;
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class ChunkRegionMap
@@ -12,13 +14,16 @@ public class ChunkRegionMap
 
     public bool regionsGenerated { private set; get; }
     public bool adjacentRegionsGenerated { private set; get; }
+    public bool fixedEdgeBorders { private set; get; }
 
     public int chunkWidth => map.chunkWidth;
     public int chunkHeight => map.chunkHeight;
 
     public readonly ChunkRegion[,] assignedRegions;
     public readonly List<ChunkRegion> regions;
+
     public readonly ChunkRegion borderRegion;
+    public readonly bool[,] usedBuffer;
 
     public readonly static ChunkRegion NO_REGION_DUMMY;
     private readonly static CardinalDirection[] DIRECTION_BUFFER;
@@ -31,7 +36,6 @@ public class ChunkRegionMap
         SWAP_REGION_BUFFER = new ChunkRegion[4];
     }
 
-
     public ChunkRegionMap(Map map, int xChunkPosition, int yChunkPosition)
     {
         this.map = map;
@@ -40,14 +44,18 @@ public class ChunkRegionMap
         xGridPositionOffset = xChunkPosition * map.chunkWidth;
         yGridPositionOffset = yChunkPosition * map.chunkHeight;
         assignedRegions = new ChunkRegion[map.chunkWidth, map.chunkHeight];
+        usedBuffer = new bool[map.chunkWidth, map.chunkWidth];
         regions = new List<ChunkRegion>();
         borderRegion = new ChunkRegion(true);
     }
 
-    public void GenerateRegions()
+    public bool TryGenerateSingleRegion(RegionsRecord record, out ChunkRegion generatedRegion)
     {
         if (regionsGenerated)
-            return;
+        {
+            generatedRegion = default;
+            return false;
+        }
 
         List<Point> pointsToGenerate = new List<Point>();
 
@@ -62,27 +70,25 @@ public class ChunkRegionMap
             }
         }
 
-        pointsToGenerate.Shuffle(pointsToGenerate.Count);
+        List<Point> usedPoints = new List<Point>();
+        pointsToGenerate.Shuffle(map.random);
 
-        UnorganizedList<Point> pointsWithoutRegion = new UnorganizedList<Point>();
-
-        ChunkRegion region = new ChunkRegion(false);
+        
+        ChunkRegion region = new ChunkRegion(map, this, record, false);
+        int targetSize = map.random.Next(record.MinSize, record.MaxSize);
         for (int i = 0; i < pointsToGenerate.Count; i++)
         {
             Point startPoint = pointsToGenerate[i];
-            int targetSize = Random.Range(map.regionMinSize, map.regionMaxSize);
-
-            ChunkRegion startRegion = map.GetRegion(startPoint.xIndex, startPoint.yIndex);
-            if (startRegion != null)
+            if (map.GetUsedState(startPoint))
                 continue;
 
             UnorganizedList<Point> pointsToHandle = new UnorganizedList<Point>();
             pointsToHandle.Add(startPoint);
             List<Point> regionPoints = new List<Point>();
 
-            while (pointsToHandle.count > 0)
+            while (pointsToHandle.Count > 0)
             {
-                int randomIndex = Random.Range(0, pointsToHandle.count);
+                int randomIndex = map.random.Next(0, pointsToHandle.Count);
                 Point handlePoint = pointsToHandle.GetItem(randomIndex);
                 pointsToHandle.RemoveAt(randomIndex);
 
@@ -117,13 +123,14 @@ public class ChunkRegionMap
                     pointsToHandle.Add(checkPoint);
             }
 
-            if (regionPoints.Count < map.regionMinSize)
+            if (regionPoints.Count < record.MinSize)
             {
                 region.Clear();
                 foreach (Point point in regionPoints)
                 {
-                    map.SetRegion(point.xIndex, point.yIndex, NO_REGION_DUMMY);
-                    pointsWithoutRegion.Add(point);
+                    map.SetRegion(point.xIndex, point.yIndex, null);
+                    map.SetUsedIndex(point);
+                    usedPoints.Add(point);
                 }
             }
             else
@@ -133,18 +140,181 @@ public class ChunkRegionMap
                 foreach (Point point in regionPoints)
                     SetAdjacentPointsToBorders(point);
 
-                region = new ChunkRegion(false);
+                map.ClearUsedIndices(usedPoints);
+
+                generatedRegion = region;
+                return true;
             }
         }
 
-        while (pointsWithoutRegion.count > 0)
+        map.ClearUsedIndices(usedPoints);
+        generatedRegion = default;
+        return false;
+    }
+
+    public void GenerateChunkRegions()
+    {
+        if (regionsGenerated)
+            return;
+
+        List<Point> pointsToGenerate = new List<Point>();
+
+        for (int x = 0; x < map.chunkWidth; x++)
+        {
+            for (int y = 0; y < map.chunkHeight; y++)
+            {
+                if (assignedRegions[x, y] != null)
+                    continue;
+
+                pointsToGenerate.Add(new Point(x + xGridPositionOffset, y + yGridPositionOffset));
+            }
+        }
+
+        pointsToGenerate.Shuffle(map.random);
+
+        UnorganizedList<Point> pointsWithoutRegion = new UnorganizedList<Point>();
+
+        WeightedRandomizer<RegionsRecord> regionRandomizer = new WeightedRandomizer<RegionsRecord>(map.random);
+        RegionsIdentifier[] regionIdentifiers = Enum.GetValues(typeof(RegionsIdentifier)) as RegionsIdentifier[];
+        foreach(RegionsIdentifier regionIdentifier in regionIdentifiers)
+        {
+            if (regionIdentifier == RegionsIdentifier.None)
+                continue;
+
+            RegionsRecord record = regionIdentifier.GetRecord();
+            if (record.Weight == 0)
+                continue;
+
+            regionRandomizer.AddItem(record, record.Weight);
+        }
+        RegionsRecord randomRegionRecord = regionRandomizer.GetRandomItem();
+        ChunkRegion region = new ChunkRegion(map, this, randomRegionRecord, false);
+        for (int i = 0; i < pointsToGenerate.Count; i++)
+        {
+            Point startPoint = pointsToGenerate[i];
+            int targetSize = map.random.Next(randomRegionRecord.MinSize, randomRegionRecord.MaxSize);
+
+            ChunkRegion startRegion = map.GetRegion(startPoint.xIndex, startPoint.yIndex);
+            if (startRegion != null)
+                continue;
+
+            UnorganizedList<Point> pointsToHandle = new UnorganizedList<Point>();
+            pointsToHandle.Add(startPoint);
+            List<Point> regionPoints = new List<Point>();
+
+            while (pointsToHandle.Count > 0)
+            {
+                int randomIndex = map.random.Next(0, pointsToHandle.Count);
+                Point handlePoint = pointsToHandle.GetItem(randomIndex);
+                pointsToHandle.RemoveAt(randomIndex);
+
+                ChunkRegion checkRegion = map.GetRegion(handlePoint.xIndex, handlePoint.yIndex);
+                if (checkRegion != null)
+                    continue;
+
+                map.SetRegion(handlePoint.xIndex, handlePoint.yIndex, region);
+                regionPoints.Add(handlePoint);
+
+                if (regionPoints.Count == targetSize)
+                    break;
+
+                Point checkPoint = handlePoint.AddDirection(CardinalDirection.Left);
+                checkRegion = map.GetRegion(checkPoint.xIndex, checkPoint.yIndex);
+                if (checkRegion == null)
+                    pointsToHandle.Add(checkPoint);
+
+                checkPoint = handlePoint.AddDirection(CardinalDirection.Bottom);
+                checkRegion = map.GetRegion(checkPoint.xIndex, checkPoint.yIndex);
+                if (checkRegion == null)
+                    pointsToHandle.Add(checkPoint);
+
+                checkPoint = handlePoint.AddDirection(CardinalDirection.Right);
+                checkRegion = map.GetRegion(checkPoint.xIndex, checkPoint.yIndex);
+                if (checkRegion == null)
+                    pointsToHandle.Add(checkPoint);
+
+                checkPoint = handlePoint.AddDirection(CardinalDirection.Top);
+                checkRegion = map.GetRegion(checkPoint.xIndex, checkPoint.yIndex);
+                if (checkRegion == null)
+                    pointsToHandle.Add(checkPoint);
+            }
+
+            if (regionPoints.Count < randomRegionRecord.MinSize)
+            {
+                WeightedRandomizer<RegionsRecord> replacementRegionRandomizer = new WeightedRandomizer<RegionsRecord>(map.random);
+                foreach (RegionsIdentifier regionIdentifier in regionIdentifiers)
+                {
+                    if (regionIdentifier == RegionsIdentifier.None)
+                        continue;
+
+                    RegionsRecord record = regionIdentifier.GetRecord();
+                    if (record.Weight == 0)
+                        continue;
+
+                    if (record.MinSize > regionPoints.Count)
+                        continue;
+
+                    regionRandomizer.AddItem(record, record.Weight);
+                }
+
+                if (replacementRegionRandomizer.count == 0)
+                {
+                    region.Clear();
+                    foreach (Point point in regionPoints)
+                    {
+                        map.SetRegion(point.xIndex, point.yIndex, NO_REGION_DUMMY);
+                        pointsWithoutRegion.Add(point);
+                    }
+                }
+                else
+                {
+                    RegionsRecord replacementRegionRecord = replacementRegionRandomizer.GetRandomItem();
+                    ChunkRegion replacementRegion = new ChunkRegion(map, this, replacementRegionRecord, false);
+
+                    int replacementSize = map.random.Next(replacementRegionRecord.MinSize, replacementRegionRecord.MaxSize);
+                    replacementSize = Mathf.Min(replacementSize, regionPoints.Count);
+
+                    for(int j = 0; j < replacementSize; j++)
+                    {
+                        Point point = regionPoints[j];
+                        map.SetRegion(point.xIndex, point.yIndex, replacementRegion);
+                    }
+
+                    for(int j = replacementSize; j < regionPoints.Count; j++)
+                    {
+                        Point point = regionPoints[j];
+                        map.SetRegion(point.xIndex, point.yIndex, null);
+                    }
+
+                    regions.Add(replacementRegion);
+
+                    foreach (Point point in replacementRegion.points)
+                        SetAdjacentPointsToBorders(point);
+
+                    randomRegionRecord = regionRandomizer.GetRandomItem();
+                    region = new ChunkRegion(map, this, randomRegionRecord, false);
+                }
+            }
+            else
+            {
+                regions.Add(region);
+
+                foreach (Point point in regionPoints)
+                    SetAdjacentPointsToBorders(point);
+
+                randomRegionRecord = regionRandomizer.GetRandomItem();
+                region = new ChunkRegion(map, this, randomRegionRecord, false);
+            }
+        }
+
+        while (pointsWithoutRegion.Count > 0)
         {
             bool anyFound = false;
-            pointsWithoutRegion.Shuffle();
+            pointsWithoutRegion.Shuffle(map.random);
 
             for (int i = 4; i >= 1; i--)
             {
-                for (int j = pointsWithoutRegion.count - 1; j >= 0; j--)
+                for (int j = pointsWithoutRegion.Count - 1; j >= 0; j--)
                 {
                     Point point = pointsWithoutRegion.GetItem(j);
 
@@ -159,7 +329,7 @@ public class ChunkRegionMap
                     if (adjacentRegions != i)
                         continue;
    
-                    int randomIndex = Random.Range(0, adjacentRegions);
+                    int randomIndex = map.random.Next(0, adjacentRegions);
 
                     Point swapPoint = point.AddDirection(DIRECTION_BUFFER[randomIndex]);
                     map.ChangePointFromBorderRegion(swapPoint.xIndex, swapPoint.yIndex, SWAP_REGION_BUFFER[randomIndex]);
@@ -176,7 +346,7 @@ public class ChunkRegionMap
             if (anyFound)
                 continue;
 
-            for (int j = pointsWithoutRegion.count - 1; j >= 0; j--)
+            for (int j = pointsWithoutRegion.Count - 1; j >= 0; j--)
             {
                 Point point = pointsWithoutRegion.GetItem(j);
                 map.AddPointToBorderRegion(point.xIndex, point.yIndex);
@@ -185,10 +355,10 @@ public class ChunkRegionMap
         }
 
         bool anyBorderSwapFound = true;
-        while(anyBorderSwapFound)
+        while (anyBorderSwapFound)
         {
             anyBorderSwapFound = false;
-            for(int i = borderRegion.points.Count - 1; i >= 0; i--)
+            for (int i = borderRegion.points.Count - 1; i >= 0; i--)
             {
                 Point point = borderRegion.points[i];
                 ChunkRegion top = map.GetRegion(point.xIndex, point.yIndex + 1);
@@ -196,7 +366,7 @@ public class ChunkRegionMap
                 ChunkRegion right = map.GetRegion(point.xIndex + 1, point.yIndex);
                 ChunkRegion left = map.GetRegion(point.xIndex - 1, point.yIndex);
 
-                if (top == null || bottom == null || left == null || right == null)
+                if (top == null || bottom == null || right == null || left == null)
                     continue;
 
                 int borderRegionCount = 0;
@@ -234,12 +404,72 @@ public class ChunkRegionMap
                     continue;
 
                 map.ChangePointFromBorderRegion(point.xIndex, point.yIndex, SWAP_REGION_BUFFER[0]);
+
+
                 anyBorderSwapFound = true;
             }
         }
 
-
         regionsGenerated = true;
+    }
+
+    public void FixEdgeBorders()
+    {
+        if (fixedEdgeBorders)
+            return;
+
+        fixedEdgeBorders = true;
+        bool anyBorderSwapFound = true;
+        while (anyBorderSwapFound)
+        {
+            anyBorderSwapFound = false;
+            for (int i = borderRegion.points.Count - 1; i >= 0; i--)
+            {
+                Point point = borderRegion.points[i];
+                ChunkRegion top = map.GetGeneratedRegion(point.xIndex, point.yIndex + 1);
+                ChunkRegion bottom = map.GetGeneratedRegion(point.xIndex, point.yIndex - 1);
+                ChunkRegion right = map.GetGeneratedRegion(point.xIndex + 1, point.yIndex);
+                ChunkRegion left = map.GetGeneratedRegion(point.xIndex - 1, point.yIndex);
+
+                int borderRegionCount = 0;
+                int bufferIndex = 0;
+                if (top.isBorderRegion)
+                    borderRegionCount++;
+                else
+                    SWAP_REGION_BUFFER[bufferIndex++] = top;
+
+                if (bottom.isBorderRegion)
+                    borderRegionCount++;
+                else
+                    SWAP_REGION_BUFFER[bufferIndex++] = bottom;
+
+                if (left.isBorderRegion)
+                    borderRegionCount++;
+                else
+                    SWAP_REGION_BUFFER[bufferIndex++] = left;
+
+                if (right.isBorderRegion)
+                    borderRegionCount++;
+                else
+                    SWAP_REGION_BUFFER[bufferIndex++] = right;
+
+                if (borderRegionCount > 3)
+                    continue;
+
+                if (bufferIndex == 4 && (SWAP_REGION_BUFFER[0] != SWAP_REGION_BUFFER[1] || SWAP_REGION_BUFFER[0] != SWAP_REGION_BUFFER[2] || SWAP_REGION_BUFFER[0] != SWAP_REGION_BUFFER[3]))
+                    continue;
+
+                if (bufferIndex == 3 && (SWAP_REGION_BUFFER[0] != SWAP_REGION_BUFFER[1] || SWAP_REGION_BUFFER[0] != SWAP_REGION_BUFFER[2]))
+                    continue;
+
+                if (bufferIndex == 2 && (SWAP_REGION_BUFFER[0] != SWAP_REGION_BUFFER[1]))
+                    continue;
+
+                map.ChangePointFromBorderRegion(point.xIndex, point.yIndex, SWAP_REGION_BUFFER[0]);
+
+                anyBorderSwapFound = true;
+            }
+        }
     }
 
     public void GenerateAdjacentRegions()

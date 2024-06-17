@@ -1,5 +1,4 @@
-﻿using SheetCodes;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using UnityEngine;
 
 public class ChunkMap
@@ -7,8 +6,9 @@ public class ChunkMap
     public readonly ChunkDataMap chunkDataMap;
     public readonly ComputeBuffer biomeTypeMapBuffer;
     public readonly ComputeBuffer fogOfWarMapBuffer;
+    public readonly ComputeBuffer roadsBuffer;
     public readonly ChunkMapPoint[,] chunkMapPoints;
-    public readonly EventList<Building> buildings;
+    public readonly PathFindingPointData[,] pathFindingPreviousPointBuffer;
 
     public bool usedCheck;
 
@@ -21,14 +21,16 @@ public class ChunkMap
     public ChunkMap(ChunkDataMap chunkDataMap)
     {
         this.chunkDataMap = chunkDataMap;
-        buildings = new EventList<Building>();
         biomeTypeMapBuffer = new ComputeBuffer(chunkDataMap.biomeTypeMap.Length, Marshal.SizeOf(typeof(int)));
         fogOfWarMapBuffer = new ComputeBuffer(chunkDataMap.biomeTypeMap.Length, Marshal.SizeOf(typeof(float)));
+        roadsBuffer = new ComputeBuffer(chunkDataMap.biomeTypeMap.Length, Marshal.SizeOf(typeof(float)));
+        pathFindingPreviousPointBuffer = new PathFindingPointData[chunkWidth, chunkHeight];
 
         chunkMapPoints = new ChunkMapPoint[chunkWidth, chunkHeight];
 
         int[] biomeTypeMap = new int[chunkDataMap.biomeTypeMap.Length];
         float[] fogOfWarMap = new float[chunkDataMap.biomeTypeMap.Length];
+        float[] roadsMap = new float[chunkDataMap.biomeTypeMap.Length];
 
 
         for (int x = 0; x < chunkDataMap.biomeTypeMap.GetLength(0); x++)
@@ -38,6 +40,7 @@ public class ChunkMap
                 int index = y * chunkDataMap.biomeTypeMap.GetLength(0) + x;
                 biomeTypeMap[index] = (int)chunkDataMap.biomeTypeMap[x, y];
                 fogOfWarMap[index] = chunkDataMap.fogOfWarMap[x, y].GetFogValue();
+                roadsMap[index] = chunkDataMap.roadsMap[x, y] ? 1 : 0;
             }
         }
 
@@ -45,23 +48,38 @@ public class ChunkMap
         {
             for (int y = 0; y < chunkHeight; y++)
             {
-                WorldResourceRecord resourceRecord = chunkDataMap.resourceMap[x, y];
-
-                if (resourceRecord != null)
-                    chunkMapPoints[x, y] = new ChunkMapPoint(this, new Point(x, y), resourceRecord);
-                else
-                    chunkMapPoints[x, y] = new ChunkMapPoint(this, new Point(x, y));
+                ChunkRegion chunkRegion = chunkDataMap.regionMap.assignedRegions[x, y];
+                chunkMapPoints[x, y] = new ChunkMapPoint(this, chunkRegion, new Point(x, y));
             }
         }
 
         biomeTypeMapBuffer.SetData(biomeTypeMap);
         fogOfWarMapBuffer.SetData(fogOfWarMap);
+        roadsBuffer.SetData(roadsMap);
+    }
+
+    public void GenerateContent()
+    {
+        for (int x = 0; x < chunkWidth; x++)
+        {
+            for (int y = 0; y < chunkHeight; y++)
+            {
+                ChunkRegionPointContent regionPointContent = chunkDataMap.contentMap[x, y];
+
+                if (regionPointContent == null)
+                    continue;
+
+                ChunkMapPoint chunkMapPoint = chunkMapPoints[x, y];
+                regionPointContent.SetChunkMapPointData(chunkMapPoint);
+            }
+        }
     }
 
     public void DisposeBuffers()
     {
         biomeTypeMapBuffer.Dispose();
         fogOfWarMapBuffer.Dispose();
+        roadsBuffer.Dispose();
     }
 
     public bool TryGetChunkMapPoint(Point point, out ChunkMapPoint chunkMapPoint)
@@ -110,5 +128,20 @@ public class ChunkMap
             }
         }
         fogOfWarMapBuffer.SetData(fogOfWarMap);
+    }
+
+    public void UpdateRoadsBuffer()
+    {
+        float[] roadsMap = new float[chunkDataMap.roadsMap.Length];
+        for (int x = 0; x < chunkDataMap.roadsMap.GetLength(0); x++)
+        {
+            for (int y = 0; y < chunkDataMap.roadsMap.GetLength(1); y++)
+            {
+                int index = y * chunkDataMap.roadsMap.GetLength(0) + x;
+                roadsMap[index] = chunkDataMap.roadsMap[x, y] ? 1 : 0;
+            }
+        }
+
+        roadsBuffer.SetData(roadsMap);
     }
 }

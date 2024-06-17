@@ -1,7 +1,19 @@
 ﻿
 using UnityEngine;
 
-public class BuildingIndicator : DataDrivenBehaviour<ChunkMapPoint>
+public class BuildingIndicatorData
+{
+    public readonly Player player;
+    public readonly ChunkMapPoint chunkMapPoint;
+
+    public BuildingIndicatorData(Player player, ChunkMapPoint chunkMapPoint)
+    {
+        this.player = player;
+        this.chunkMapPoint = chunkMapPoint;
+    }
+}
+
+public class BuildingIndicator : DataDrivenBehaviour<BuildingIndicatorData>
 {
     [SerializeField] private Material viableMaterial;
     [SerializeField] private Material notViableMaterial;
@@ -20,25 +32,35 @@ public class BuildingIndicator : DataDrivenBehaviour<ChunkMapPoint>
         viable.onValueChangeImmediate += OnValueChanged_Viable;
     }
 
-    protected override void OnValueChanged_Data(ChunkMapPoint oldValue, ChunkMapPoint newValue)
+    protected override void OnValueChanged_Data(BuildingIndicatorData oldValue, BuildingIndicatorData newValue)
     {
         if (oldValue != null)
         {
-            oldValue.canBeBlocked.onValueChange -= OnValueChanged_ChunkMapPoint_CanBeBlocked;
-            meshRenderer.enabled = false;
+            oldValue.chunkMapPoint.canBeBlocked.onValueChange -= OnValueChanged_ChunkMapPoint_CanBeBlocked;
+            oldValue.chunkMapPoint.chunkRegion.onValueChange -= OnValueChanged_ChunkMapPoint_ChunkRegion;
         }
 
         if (newValue != null)
         {
-            transform.position = new Vector3(newValue.globalPoint.xIndex + 0.5f, 0, newValue.globalPoint.yIndex + 0.5f);
-            newValue.canBeBlocked.onValueChange += OnValueChanged_ChunkMapPoint_CanBeBlocked;
+            transform.position = new Vector3(newValue.chunkMapPoint.globalPoint.xIndex + 0.5f, 0, newValue.chunkMapPoint.globalPoint.yIndex + 0.5f);
+            newValue.chunkMapPoint.canBeBlocked.onValueChange += OnValueChanged_ChunkMapPoint_CanBeBlocked;
+            newValue.chunkMapPoint.chunkRegion.onValueChange += OnValueChanged_ChunkMapPoint_ChunkRegion;
             meshRenderer.enabled = true;
+        }
+        else
+        {
+            meshRenderer.enabled = false;
         }
 
         SetViableStatus();
     }
 
     private void OnValueChanged_ChunkMapPoint_CanBeBlocked(bool oldValue, bool newValue)
+    {
+        SetViableStatus();
+    }
+
+    private void OnValueChanged_ChunkMapPoint_ChunkRegion(ChunkRegion oldValue, ChunkRegion newValue)
     {
         SetViableStatus();
     }
@@ -51,7 +73,13 @@ public class BuildingIndicator : DataDrivenBehaviour<ChunkMapPoint>
             return;
         }
 
-        if (!data.canBeBlocked.value)
+        if(data.chunkMapPoint.chunkRegion.value != data.player.playerRegion)
+        {
+            viable.value = false;
+            return;
+        }
+
+        if (!data.chunkMapPoint.canBeBlocked.value)
         {
             viable.value = false;
             return;

@@ -5,11 +5,27 @@ using UnityEngine;
 [Serializable]
 public class BuildingGridPoint
 {
-    public bool blocked => !canMoveLeft && !canMoveRight && !canMoveDown && !canMoveUp;
     [field: SerializeField] public Point centerOffset;
-    [field: SerializeField] public bool canMoveLeft;
-    [field: SerializeField] public bool canMoveRight;
-    [field: SerializeField] public bool canMoveUp;
-    [field: SerializeField] public bool canMoveDown;
+    [field: SerializeField] public TileTraversalEdgeDirection travelEdgeDirection;
 
+    public Point Get0DegreesRotated()
+    {
+        return centerOffset;
+    }
+
+    public Point Get90DegreesRotated()
+    {
+          return centerOffset.GetRotated90DegreesOffset().AddDirection(CardinalDirection.Bottom);
+    }
+
+    public Point Get180DegreesRotated()
+    {
+
+        return centerOffset.GetRotated180DegreesOffset().AddDirection(DiagonalDirection.BottomLeft);
+    }
+
+    public Point Get270DegreesRotated()
+    {
+        return centerOffset.GetRotated270DegreesOffset().AddDirection(CardinalDirection.Left);
+    }
 }

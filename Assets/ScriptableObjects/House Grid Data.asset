@@ -12,55 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 753e64a7060067b4289c8274d452a151, type: 3}
   m_Name: House Grid Data
   m_EditorClassIdentifier: 
-  enterExitPoints:
-  - centerOffset:
-      xIndex: 2
-      yIndex: 0
-    direction: 1
+  <enterExitPoints>k__BackingField:
   - centerOffset:
       xIndex: 2
       yIndex: 1
     direction: 1
-  buildingGridPoints:
-  - centerOffset:
-      xIndex: 0
-      yIndex: 0
-    canMoveLeft: 0
-    canMoveRight: 0
-    canMoveUp: 0
-    canMoveDown: 0
-  - centerOffset:
-      xIndex: 0
-      yIndex: 1
-    canMoveLeft: 0
-    canMoveRight: 0
-    canMoveUp: 0
-    canMoveDown: 0
-  - centerOffset:
-      xIndex: 1
-      yIndex: 0
-    canMoveLeft: 0
-    canMoveRight: 0
-    canMoveUp: 0
-    canMoveDown: 0
-  - centerOffset:
-      xIndex: 1
-      yIndex: 1
-    canMoveLeft: 0
-    canMoveRight: 0
-    canMoveUp: 0
-    canMoveDown: 0
-  - centerOffset:
-      xIndex: 2
-      yIndex: 0
-    canMoveLeft: 0
-    canMoveRight: 1
-    canMoveUp: 0
-    canMoveDown: 0
-  - centerOffset:
-      xIndex: 2
-      yIndex: 1
-    canMoveLeft: 0
-    canMoveRight: 1
-    canMoveUp: 0
-    canMoveDown: 0
+  <size>k__BackingField:
+    width: 3
+    height: 3

@@ -5,7 +5,11 @@ Shader "TilingTest" {
 	{
 		textureArray("Texture Array", 2DArray) = "white" {}
 		normalArray("Normal Array", 2DArray) = "white" {}
-		normal("Texture", 2D) = "white" {}
+		roadTexture("Road Texture", 2D) = "white" {}
+		roadNormal("Road Normal", 2D) = "white" {}
+        roadSize("Road Size", Range(0.1, 0.4)) = 0.1
+        roadBlendSize("Road Blend Size", Range(0.0, 0.2)) = 0.1
+        roadTextureScale("Road Texture Scale", Range(1.0, 100.0)) = 1
 		blendTexture("Blend Texture", 2D) = "white" {}
 		unrotatedTextureScale("Unrotated Texture Scale", Range(1.0, 100.0)) = 1
 		rotatedTextureScale("Rotated Texture Scale", Range(1.0, 100.0)) = 1
@@ -22,7 +26,12 @@ Shader "TilingTest" {
 		UNITY_DECLARE_TEX2DARRAY(textureArray);
 		UNITY_DECLARE_TEX2DARRAY(normalArray);
 		StructuredBuffer<int> biomeMap;
-        sampler2D normal;
+		StructuredBuffer<float> roadsMap;
+        sampler2D roadTexture;
+        sampler2D roadNormal;
+        float roadSize;
+        float roadBlendSize;
+        float roadTextureScale;
 		uniform int biomeWidth;
 		uniform int biomeHeight;
 
@@ -50,6 +59,12 @@ Shader "TilingTest" {
             struct ColorAndNormal {
                 float4 color;
                 float3 normal;
+            };
+            
+            struct RoadInfluence {
+                float4 color;
+                float3 normal;
+                float influence;
             };
 
             struct appdata {
@@ -128,7 +143,81 @@ Shader "TilingTest" {
 				float result = value >= 0 ? fmod(value, divider) : divider - fmod(-value, divider);
 				return result;
 			}
+            
+            RoadInfluence GetRoadColorAndNormal(float2 uvCoords)
+            {
+                int leftIndex = floor(uvCoords.x * biomeWidth - 0.5f);
+				int bottomIndex = floor(uvCoords.y * biomeHeight - 0.5f);
+				int rightIndex = leftIndex + 1;
+				int topIndex = bottomIndex + 1;
 
+                int bottomLeftIndex = (bottomIndex + 1) * (biomeWidth + 2) + (leftIndex + 1);
+                int bottomRightIndex = (bottomIndex + 1) * (biomeWidth + 2) + (rightIndex + 1);
+                int topLeftIndex = (topIndex + 1) * (biomeWidth + 2) + (leftIndex + 1);
+                int topRightIndex = (topIndex + 1) * (biomeWidth + 2) + (rightIndex + 1);
+
+                bool bottomLeftRoad = roadsMap[bottomLeftIndex];
+                bool bottomRightRoad = roadsMap[bottomRightIndex];
+                bool topLeftRoad = roadsMap[topLeftIndex];
+                bool topRightRoad = roadsMap[topRightIndex];
+
+                bool leftRoad = bottomLeftRoad && topLeftRoad;
+                bool topRoad = topLeftRoad && topRightRoad;
+                bool rightRoad = bottomRightRoad && topRightRoad;
+                bool bottomRoad = bottomLeftRoad && bottomRightRoad;
+
+                bool centerRoad = bottomLeftRoad && topLeftRoad && bottomRightRoad && topRightRoad;
+                
+                float xDistance = (uvCoords.x * biomeWidth + 0.5f) % 1;
+                float yDistance = (uvCoords.y * biomeHeight + 0.5f) % 1;
+                float invertXDistance = 1 - xDistance;
+                float invertYDistance = 1 - yDistance;
+
+                float minXInfluence = (xDistance < roadSize) + (xDistance >= roadSize) * (max(0, roadSize + roadBlendSize - xDistance) / roadBlendSize);
+                float minYInfluence = (yDistance < roadSize) + (yDistance >= roadSize) * (max(0, roadSize + roadBlendSize - yDistance) / roadBlendSize);
+                float maxXInfluence = (invertXDistance < roadSize) + (invertXDistance >= roadSize) * (max(0, roadSize + roadBlendSize - invertXDistance) / roadBlendSize);
+                float maxYInfluence = (invertYDistance < roadSize) + (invertYDistance >= roadSize) * (max(0, roadSize + roadBlendSize - invertYDistance) / roadBlendSize);
+                float centerXInfluence = 1 - minXInfluence - maxXInfluence;
+                float centerYInfluence = 1 - minYInfluence - maxYInfluence;
+                
+                float bottomLeftInfluence = bottomLeftRoad * minXInfluence * minYInfluence;
+                float topLeftInfluence = topLeftRoad * minXInfluence * maxYInfluence;
+                float leftInfluence = leftRoad * (1 - bottomLeftInfluence - topLeftInfluence) * minXInfluence;
+                
+                float bottomRightInfluence = bottomRightRoad * maxXInfluence * minYInfluence;
+                float topRightInfluence = topRightRoad * maxXInfluence * maxYInfluence;
+                float rightInfluence = rightRoad * (1 - bottomRightInfluence - topRightInfluence) * maxXInfluence;
+
+                float topInfluence = topRoad * (1 - topLeftInfluence - topRightInfluence) * maxYInfluence;
+                float bottomInfluence = bottomRoad * (1 - bottomLeftInfluence - bottomRightInfluence) * minYInfluence;
+                float centerInfluence = centerRoad * (1 - bottomLeftInfluence - topLeftInfluence - leftInfluence - bottomRightInfluence - topRightInfluence - rightInfluence - topInfluence - bottomInfluence);
+
+                RoadInfluence result;
+                result.influence = min(1, bottomLeftInfluence + topLeftInfluence + bottomRightInfluence + topRightInfluence + leftInfluence + rightInfluence + topInfluence + bottomInfluence + centerInfluence);
+
+                float2 uvCoords2D = float2(uvCoords / unrotatedTextureScale);
+                uvCoords2D.x *= biomeWidth * roadTextureScale;
+                uvCoords2D.y *= biomeHeight * roadTextureScale;
+                //float2 uvRotatedCoords2D = float2(-uvCoords.y / rotatedTextureScale , uvCoords.x / rotatedTextureScale);
+                //uvRotatedCoords2D.x *= biomeWidth * roadTextureScale;
+                //uvRotatedCoords2D.y *= biomeHeight * roadTextureScale;
+                //
+                //float4 rotatedColor = tex2D(roadTexture, uvRotatedCoords2D);
+                float4 unrotatedColor = tex2D(roadTexture, uvCoords2D);
+                //float3 rotatedNormal = UnpackNormal(tex2D(roadNormal, uvRotatedCoords2D));
+                //rotatedNormal.x = - rotatedNormal.x;
+                //rotatedNormal.y = - rotatedNormal.y;
+                float3 unrotatedNormal = UnpackNormal(tex2D(roadNormal, uvCoords2D));
+                //unrotatedNormal.x = - unrotatedNormal.x;
+                //unrotatedNormal.y = - unrotatedNormal.y;
+
+                float maskAlpha = tex2D(blendTexture, uvCoords / maskScale).a;
+
+                result.color = unrotatedColor;
+                result.normal = unrotatedNormal;
+                return result;
+            }
+            
             fixed4 frag (v2f input) : SV_TARGET
             {      				
                 int leftIndex = floor(input.uv.x * biomeWidth - 0.5);
@@ -154,20 +243,24 @@ Shader "TilingTest" {
                 uvXInfluence = max(0, min(1, (uvXInfluence - 0.5) / blendDistance + 0.5));
                 uvYInfluence = max(0, min(1, (uvYInfluence - 0.5) / blendDistance + 0.5));
                 
-                float2 scaledUV = float2(input.uv.x * biomeWidth, input.uv.y * biomeHeight);
+                float2 scaledUV = input.worldPos.xz;
 				ColorAndNormal bottomLeftColor = GetBiomeColorAndNormal(scaledUV, leftIndex, bottomIndex);
 				ColorAndNormal bottomRightColor = GetBiomeColorAndNormal(scaledUV, rightIndex, bottomIndex);
 				ColorAndNormal topLeftColor = GetBiomeColorAndNormal(scaledUV, leftIndex, topIndex);
 				ColorAndNormal topRightColor = GetBiomeColorAndNormal(scaledUV, rightIndex, topIndex);
+                
+                RoadInfluence roadInfluence = GetRoadColorAndNormal(input.uv);
 
 				float4 textureColor = bottomLeftColor.color * (1 - uvXInfluence) * (1 - uvYInfluence);
 				textureColor += bottomRightColor.color * uvXInfluence * (1 - uvYInfluence);
 				textureColor += topLeftColor.color * (1 - uvXInfluence) * uvYInfluence;
 				textureColor += topRightColor.color * uvXInfluence * uvYInfluence;
+				textureColor = textureColor * (1 - roadInfluence.influence) + roadInfluence.color * roadInfluence.influence;
                 
                 float3 topNormal = BlendNormals(topRightColor.normal, topLeftColor.normal, uvXInfluence);
                 float3 bottomNormal = BlendNormals(bottomRightColor.normal, bottomLeftColor.normal, uvXInfluence);
                 float3 finalNormal = BlendNormals(topNormal, bottomNormal, uvYInfluence);
+                finalNormal = BlendNormals(finalNormal, roadInfluence.normal, roadInfluence.influence);
 
                 float3x3 TBN = float3x3(normalize(input.T), normalize(input.B), normalize(input.N));
 				TBN = transpose(TBN);

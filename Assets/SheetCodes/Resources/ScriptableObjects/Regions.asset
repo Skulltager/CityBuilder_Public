@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 76bad8d6bab0a2041a781c123e48bc71, type: 3}
+  m_Name: Regions
+  m_EditorClassIdentifier: 
+  records:
+  - identifier: 6
+    _minSize: 0
+    _maxSize: 0
+    _weight: 0
+    _resourceSpawns: 
+    _name: Border
+  - identifier: 1
+    _minSize: 500
+    _maxSize: 500
+    _weight: 0
+    _resourceSpawns: 01000000020000000300000001000000
+    _name: Player Start
+  - identifier: 2
+    _minSize: 35
+    _maxSize: 45
+    _weight: 100
+    _resourceSpawns: 01000000
+    _name: Small Trees
+  - identifier: 3
+    _minSize: 25
+    _maxSize: 35
+    _weight: 100
+    _resourceSpawns: 02000000
+    _name: Small Iron Ore
+  - identifier: 4
+    _minSize: 45
+    _maxSize: 55
+    _weight: 100
+    _resourceSpawns: 03000000
+    _name: Small Berry Bush
+  - identifier: 5
+    _minSize: 100
+    _maxSize: 120
+    _weight: 20
+    _resourceSpawns: 010000000200000003000000
+    _name: Medium Resource

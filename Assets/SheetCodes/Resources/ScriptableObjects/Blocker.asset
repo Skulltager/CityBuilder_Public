@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ebd8cd52294e8dc41b3d5c4f6240fa7f, type: 3}
+  m_Name: Blocker
+  m_EditorClassIdentifier: 
+  records:
+  - identifier: 1
+    _prefab: {fileID: 8366134170603525787, guid: 92cba5497d81434479fc6b116727bf43, type: 3}
+    _materials:
+    - {fileID: 2100000, guid: 56323a920c01f5845a2f89146474a35e, type: 2}

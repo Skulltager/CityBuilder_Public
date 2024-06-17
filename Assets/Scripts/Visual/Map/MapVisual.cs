@@ -1,9 +1,12 @@
 ﻿
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 public class MapVisual : DataDrivenBehaviour<Map>
 {
+    [SerializeField] private GraphicRaycaster graphicsRaycaster;
     [SerializeField] private ChunkMapVisual chunkMapVisualPrefab;
     [SerializeField] private Transform chunkMapVisualContainer;
 
@@ -50,8 +53,19 @@ public class MapVisual : DataDrivenBehaviour<Map>
         chunkMapVisualInstances.Remove(instance);
     }
 
-    public bool TryGetMouseGridPoint(out Point point, float xOffset, float yOffset)
+    public bool TryGetMouseGridPoint(float xOffset, float yOffset, out Point point)
     {
+        PointerEventData pointerEventData = new PointerEventData(EventSystem.current);
+        pointerEventData.position = Input.mousePosition;
+        List<RaycastResult> raycastResults = new List<RaycastResult>();
+        graphicsRaycaster.Raycast(pointerEventData, raycastResults);
+        if (raycastResults.Count > 0)
+        {
+            point = default;
+            return false;
+        }
+
+
         Plane plane = new Plane(Vector3.up, transform.position.y);
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
         if (!plane.Raycast(ray, out float distance))

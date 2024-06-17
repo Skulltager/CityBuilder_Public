@@ -2,9 +2,10 @@
 
 public class ChunkDataMap
 {
-    public readonly WorldResourceRecord[,] resourceMap;
+    public readonly ChunkRegionPointContent[,] contentMap;
     public readonly BiomeType[,] biomeTypeMap;
     public readonly VisionState[,] fogOfWarMap;
+    public readonly bool[,] roadsMap;
 
     public readonly ChunkRegionMap regionMap;
 
@@ -19,9 +20,10 @@ public class ChunkDataMap
     public ChunkDataMap(ChunkRegionMap regionMap)
     {
         this.regionMap = regionMap;
-        resourceMap = new WorldResourceRecord[chunkWidth, chunkHeight];
+        contentMap = new ChunkRegionPointContent[chunkWidth, chunkHeight];
         biomeTypeMap = new BiomeType[chunkWidth + 2, chunkHeight + 2];
         fogOfWarMap = new VisionState[chunkWidth + 2, chunkHeight + 2];
+        roadsMap = new bool[chunkWidth + 2, chunkHeight + 2];
     }
 
     public void GenerateRegionContent()

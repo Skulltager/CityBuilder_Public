@@ -79,9 +79,13 @@
                 float4 D = mul(viewProjInv,H);
                 float4 col = D/D.w;
 
+				if (col.y < -0.01)
+					return float4(0, 0, 0, 1);
+
+
 				float2 hitPosition = col.xz;
 				hitPosition -= float2(chunkXOffset, chunkYOffset);
-				bool outOfBounds = hitPosition.x < 0 || hitPosition.x >= biomeWidth || hitPosition.y < 0 || hitPosition.y > biomeHeight;
+				bool outOfBounds = hitPosition.x < 0 || hitPosition.x > biomeWidth || hitPosition.y < 0 || hitPosition.y > biomeHeight;
 				clip(outOfBounds ? -1 : 1);
 
                 int leftIndex = floor(hitPosition.x - 0.5);

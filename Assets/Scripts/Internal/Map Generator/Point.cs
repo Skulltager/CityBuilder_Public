@@ -2,7 +2,7 @@
 using UnityEngine;
 
 [Serializable]
-public class Point
+public struct Point
 {
     public int xIndex;
     public int yIndex;
@@ -55,19 +55,36 @@ public class Point
         throw new EntryPointNotFoundException("Missing something weird");
     }
 
+    public Point RotateByDirection(CardinalDirection direction)
+    {
+        switch (direction)
+        {
+            case CardinalDirection.Right:
+                return this;
+            case CardinalDirection.Bottom:
+                return GetRotated90DegreesOffset();
+            case CardinalDirection.Left:
+                return GetRotated180DegreesOffset();
+            case CardinalDirection.Top:
+                return GetRotated270DegreesOffset();
+        }
+
+        throw new EntryPointNotFoundException("Missing something weird");
+    }
+
     public Point GetRotated90DegreesOffset()
     {
-        return new Point(yIndex, -xIndex);
+        return new Point(yIndex, -xIndex - 1);
     }
 
     public Point GetRotated180DegreesOffset()
     {
-        return new Point(-xIndex, -yIndex);
+        return new Point(-xIndex - 1, -yIndex - 1);
     }
 
     public Point GetRotated270DegreesOffset()
     {
-        return new Point(-yIndex, xIndex);
+        return new Point(-yIndex - 1, xIndex);
     }
 
     public int DistanceToPoint(Point other)

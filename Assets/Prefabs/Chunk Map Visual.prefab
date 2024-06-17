@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 2577386619304842210}
   - component: {fileID: 2577386619304842211}
   - component: {fileID: 2577386619304842209}
-  - component: {fileID: 2577386619304842208}
+  - component: {fileID: 559732791477054314}
   m_Layer: 0
   m_Name: Fog Of War
   m_TagString: Untagged
@@ -84,20 +84,20 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!64 &2577386619304842208
-MeshCollider:
+--- !u!114 &559732791477054314
+MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2577386619304842222}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
   m_Enabled: 1
-  serializedVersion: 4
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 10210, guid: 0000000000000000e000000000000000, type: 0}
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 693435be758b49f40b732702b22e7910, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  height: 5
+  surfaceTransform: {fileID: 2577386619412772194}
 --- !u!1 &2577386619412772195
 GameObject:
   m_ObjectHideFlags: 0
@@ -176,8 +176,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 88aa45114b9db4c4693118ae2cd36252, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  buildingPrefab: {fileID: 5637619377430010519, guid: 1737eb1ae8a1907459e2055a36a725ee, type: 3}
-  buildingInstancesContainer: {fileID: 2577386619412772194}
   contentContainer: {fileID: 2577386619412772194}
   terrainTransform: {fileID: 2577386620951761622}
   fogOfWarTransform: {fileID: 2577386619304842210}
@@ -195,7 +193,6 @@ GameObject:
   - component: {fileID: 2577386620951761622}
   - component: {fileID: 2577386620951761623}
   - component: {fileID: 2577386620951761621}
-  - component: {fileID: 2577386620951761620}
   m_Layer: 0
   m_Name: Ground
   m_TagString: Untagged
@@ -268,17 +265,3 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!64 &2577386620951761620
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2577386620951761618}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 4
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 10210, guid: 0000000000000000e000000000000000, type: 0}

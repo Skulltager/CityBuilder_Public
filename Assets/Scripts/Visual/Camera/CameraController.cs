@@ -1,7 +1,7 @@
 using UnityEngine;
 
 public class CameraController : MonoBehaviour
-{
+{ 
     [SerializeField] [Range(0, 0.1f)] private float mouseScreenEdgeFactor;
     [SerializeField] private float moveSpeed;
     [SerializeField] private float rotateSpeed;
@@ -23,6 +23,7 @@ public class CameraController : MonoBehaviour
     [SerializeField] private KeyCode rotateRightKeyCode;
     [SerializeField] private Transform cameraPitchTransform;
     [SerializeField] private Transform cameraZoomTransform;
+    [SerializeField] private MapVisual mapVisual;
 
     private int targetZoomLevel;
     private float currentZoomLevel;
@@ -139,9 +140,8 @@ public class CameraController : MonoBehaviour
     private void Update_CameraPositionInBounds()
     {
         Vector3 position = transform.position;
-        float zoomAmount = GetZoomAmount() * zoomAmountInfluenceOnBounds;
-        position.x = Mathf.Clamp(position.x, bottomLeftBounds.x + zoomAmount, topRightBounds.x - zoomAmount);
-        position.z = Mathf.Clamp(position.z, bottomLeftBounds.y + zoomAmount, topRightBounds.y - zoomAmount);
+        position.x = Mathf.Clamp(position.x, mapVisual.data.xMinRegion, mapVisual.data.xMaxRegion + 1);
+        position.z = Mathf.Clamp(position.z, mapVisual.data.yMinRegion, mapVisual.data.yMaxRegion + 1);
         transform.position = position;
     }
 

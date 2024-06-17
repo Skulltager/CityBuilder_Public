@@ -14,8 +14,146 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   records:
   - identifier: 1
+    _name: House
+    _startingLimit: 2
     _buildingGridData: {fileID: 11400000, guid: 512f3c40d1ce5a64688c38688f480726, type: 2}
-    _model: {fileID: 8887018836010113995, guid: d66767dd52ee7244c84a9f5c54a9b98e, type: 3}
+    _buildingPlacementPrefab: {fileID: 8887018836010113995, guid: aaca1d98c7215fe4ba64587dfef86197, type: 3}
+    _buildingPrefab: {fileID: -3439336123822826229, guid: d66767dd52ee7244c84a9f5c54a9b98e, type: 3}
+    _buildingDeconstructionPrefab: {fileID: 8197149538117785679, guid: c4bab5ea120c2554d81221b0005e230b, type: 3}
+    _buildingConstructionPrefab: {fileID: -4158481478800814126, guid: 4f1dc417b6daec94d96ac7e2b66f30e5, type: 3}
+    _resourceCosts: 0100000002000000
+    _constructionDuration: 10
+    _maximumAssignedVillagers: 0
+    _infiniteStorage: 0
+    _inventorySize: 0
+    _canBuild: 1
+    _craftingRecipes: 0
+    _gatheringRange: 0
+    _gatherableType: 0
+    _adjustableStorageDemand: 0
   - identifier: 2
-    _buildingGridData: {fileID: 11400000, guid: 639f1e17410a7d94b9ee94e06d27e438, type: 2}
-    _model: {fileID: 4989721882352195127, guid: 49ebdec14f7b3704b9c11a9d0cfc4e7c, type: 3}
+    _name: Town Center
+    _startingLimit: 0
+    _buildingGridData: {fileID: 11400000, guid: a438c3d5d0c753048bacea825ebb76fa, type: 2}
+    _buildingPlacementPrefab: {fileID: 5478786500010021546, guid: 724246604217ad24f9e081d4dd68a27c, type: 3}
+    _buildingPrefab: {fileID: 5535864643447833698, guid: f06c7f3f5f365204d8c704f7e751e65c, type: 3}
+    _buildingDeconstructionPrefab: {fileID: 5519956506888615033, guid: 858527b9a6835014f8db998a2cd52da2, type: 3}
+    _buildingConstructionPrefab: {fileID: -4158481478800814126, guid: 79b47e2492b6087408ce6f6779d7b9cf, type: 3}
+    _resourceCosts: 
+    _constructionDuration: 20
+    _maximumAssignedVillagers: 0
+    _infiniteStorage: 1
+    _inventorySize: 0
+    _canBuild: 0
+    _craftingRecipes: 0
+    _gatheringRange: 0
+    _gatherableType: 0
+    _adjustableStorageDemand: 0
+  - identifier: 3
+    _name: Crafting Station
+    _startingLimit: 2
+    _buildingGridData: {fileID: 11400000, guid: 5c4062c90cbdb834a87618519db9b3c0, type: 2}
+    _buildingPlacementPrefab: {fileID: 3902133241468812336, guid: 992f3febc93259a419bb01fc9485374f, type: 3}
+    _buildingPrefab: {fileID: 1906856218486030110, guid: 0d18590417a4c2648aca60a974147617, type: 3}
+    _buildingDeconstructionPrefab: {fileID: 2310711701906369852, guid: de55d00a4c52a8a40a0be26b7b284199, type: 3}
+    _buildingConstructionPrefab: {fileID: -4158481478800814126, guid: 94b6f33eca855764b9a495df715f4415, type: 3}
+    _resourceCosts: 01000000
+    _constructionDuration: 20
+    _maximumAssignedVillagers: 3
+    _infiniteStorage: 0
+    _inventorySize: 20
+    _canBuild: 1
+    _craftingRecipes: 2
+    _gatheringRange: 0
+    _gatherableType: 0
+    _adjustableStorageDemand: 0
+  - identifier: 4
+    _name: Gathering Hut
+    _startingLimit: 4
+    _buildingGridData: {fileID: 11400000, guid: f200160fbaeac4d42af76306c75d0bf9, type: 2}
+    _buildingPlacementPrefab: {fileID: 5352865655111211228, guid: 8ea79361002f34541af799a1a7f62a06, type: 3}
+    _buildingPrefab: {fileID: -3727690876049997291, guid: ed90965d8510d4540a73d5daea067bd5, type: 3}
+    _buildingDeconstructionPrefab: {fileID: 8197149538117785679, guid: c4bab5ea120c2554d81221b0005e230b, type: 3}
+    _buildingConstructionPrefab: {fileID: -4158481478800814126, guid: 4f1dc417b6daec94d96ac7e2b66f30e5, type: 3}
+    _resourceCosts: 0300000004000000
+    _constructionDuration: 20
+    _maximumAssignedVillagers: 2
+    _infiniteStorage: 1
+    _inventorySize: 0
+    _canBuild: 1
+    _craftingRecipes: 0
+    _gatheringRange: 8
+    _gatherableType: 8
+    _adjustableStorageDemand: 0
+  - identifier: 5
+    _name: Warehouse
+    _startingLimit: 1
+    _buildingGridData: {fileID: 11400000, guid: f63470ded6bdbd24ea10b6205316d413, type: 2}
+    _buildingPlacementPrefab: {fileID: 5602035610606069056, guid: 1a67881a846781b4ab5b737ba055b81b, type: 3}
+    _buildingPrefab: {fileID: 1909348612630634352, guid: 34d07dc455ae86640ba8956ab71ec6a7, type: 3}
+    _buildingDeconstructionPrefab: {fileID: -5767438681651015114, guid: 7a09ab3cdf9cac547afce79d26722656, type: 3}
+    _buildingConstructionPrefab: {fileID: -4158481478800814126, guid: b29060a76bd13564c9eb788c8e08ee32, type: 3}
+    _resourceCosts: 01000000
+    _constructionDuration: 20
+    _maximumAssignedVillagers: 1
+    _infiniteStorage: 0
+    _inventorySize: 100
+    _canBuild: 1
+    _craftingRecipes: 0
+    _gatheringRange: 0
+    _gatherableType: 0
+    _adjustableStorageDemand: 1
+  - identifier: 6
+    _name: Woodcutters Hut
+    _startingLimit: 2
+    _buildingGridData: {fileID: 11400000, guid: 8edcb899cd9fa02419be69122f14eaec, type: 2}
+    _buildingPlacementPrefab: {fileID: 5352865655111211228, guid: ec6a2a91a61e63d4ca6fee51344fe106, type: 3}
+    _buildingPrefab: {fileID: -3727690876049997291, guid: 93e7a61f057346641b6834c157f5eca0, type: 3}
+    _buildingDeconstructionPrefab: {fileID: 8197149538117785679, guid: c4bab5ea120c2554d81221b0005e230b, type: 3}
+    _buildingConstructionPrefab: {fileID: -4158481478800814126, guid: 4f1dc417b6daec94d96ac7e2b66f30e5, type: 3}
+    _resourceCosts: 01000000
+    _constructionDuration: 20
+    _maximumAssignedVillagers: 2
+    _infiniteStorage: 1
+    _inventorySize: 0
+    _canBuild: 1
+    _craftingRecipes: 0
+    _gatheringRange: 8
+    _gatherableType: 1
+    _adjustableStorageDemand: 0
+  - identifier: 7
+    _name: Mining Camp
+    _startingLimit: 2
+    _buildingGridData: {fileID: 11400000, guid: 6bc36f460e9426c409c2697c144cf491, type: 2}
+    _buildingPlacementPrefab: {fileID: 5352865655111211228, guid: 542f63d5be3e9c748a0872ca11df4258, type: 3}
+    _buildingPrefab: {fileID: -3727690876049997291, guid: 083f754d35474b448a343678cbff7286, type: 3}
+    _buildingDeconstructionPrefab: {fileID: 8197149538117785679, guid: c4bab5ea120c2554d81221b0005e230b, type: 3}
+    _buildingConstructionPrefab: {fileID: -4158481478800814126, guid: 4f1dc417b6daec94d96ac7e2b66f30e5, type: 3}
+    _resourceCosts: 01000000
+    _constructionDuration: 20
+    _maximumAssignedVillagers: 2
+    _infiniteStorage: 1
+    _inventorySize: 0
+    _canBuild: 1
+    _craftingRecipes: 0
+    _gatheringRange: 8
+    _gatherableType: 6
+    _adjustableStorageDemand: 0
+  - identifier: 8
+    _name: Road Construction
+    _startingLimit: 0
+    _buildingGridData: {fileID: 11400000, guid: 78c7377d7fb53ef4ab0dd57f1ed0761d, type: 2}
+    _buildingPlacementPrefab: {fileID: 0}
+    _buildingPrefab: {fileID: 0}
+    _buildingDeconstructionPrefab: {fileID: -1146544214701204579, guid: 6c3fd8fad81078b448ed98d316703c37, type: 3}
+    _buildingConstructionPrefab: {fileID: -4158481478800814126, guid: 62baa3ca563c48b4c9ca0ab32f9137d6, type: 3}
+    _resourceCosts: 
+    _constructionDuration: 10
+    _maximumAssignedVillagers: 0
+    _infiniteStorage: 0
+    _inventorySize: 0
+    _canBuild: 0
+    _craftingRecipes: 0
+    _gatheringRange: 0
+    _gatherableType: 0
+    _adjustableStorageDemand: 0

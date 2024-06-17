@@ -2,11 +2,13 @@
 
 public class BuildingEnterExitIndicatorData
 {
+    public readonly Player player;
     public readonly ChunkMapPoint chunkMapPoint;
     public readonly CardinalDirection enterExitDirection;
 
-    public BuildingEnterExitIndicatorData(ChunkMapPoint chunkMapPoint, CardinalDirection enterExitDirection)
+    public BuildingEnterExitIndicatorData(Player player, ChunkMapPoint chunkMapPoint, CardinalDirection enterExitDirection)
     {
+        this.player = player;
         this.chunkMapPoint = chunkMapPoint;
         this.enterExitDirection = enterExitDirection;
     }
@@ -35,15 +37,16 @@ public class BuildingEnterExitIndicator : DataDrivenBehaviour<BuildingEnterExitI
     {
         if (oldValue != null)
         {
-            meshRenderer.enabled = false;
             oldValue.chunkMapPoint.blocked.onValueChange -= OnValueChanged_ChunkMapPoint_Blocked;
+            oldValue.chunkMapPoint.chunkRegion.onValueChange -= OnValueChanged_ChunkMapPoint_ChunkRegion;
         }
 
         if (newValue != null)
         {
             meshRenderer.enabled = true;
             newValue.chunkMapPoint.blocked.onValueChange += OnValueChanged_ChunkMapPoint_Blocked;
-            switch(newValue.enterExitDirection)
+            newValue.chunkMapPoint.chunkRegion.onValueChange += OnValueChanged_ChunkMapPoint_ChunkRegion;
+            switch (newValue.enterExitDirection)
             {
                 case CardinalDirection.Right:
                     transform.position = new Vector3(newValue.chunkMapPoint.globalPoint.xIndex, 0, newValue.chunkMapPoint.globalPoint.yIndex + 0.5f);
@@ -66,11 +69,20 @@ public class BuildingEnterExitIndicator : DataDrivenBehaviour<BuildingEnterExitI
                     break;
             }
         }
+        else
+        {
+            meshRenderer.enabled = false;
+        }
 
         SetViableStatus();
     }
 
     private void OnValueChanged_ChunkMapPoint_Blocked(bool oldValue, bool newValue)
+    {
+        SetViableStatus();
+    }
+
+    private void OnValueChanged_ChunkMapPoint_ChunkRegion(ChunkRegion oldValue, ChunkRegion newValue)
     {
         SetViableStatus();
     }
@@ -82,6 +94,12 @@ public class BuildingEnterExitIndicator : DataDrivenBehaviour<BuildingEnterExitI
             viable.value = false;
             return;
         }
+
+        if(data.chunkMapPoint.chunkRegion.value != data.player.playerRegion)
+        {
+            viable.value = false;
+            return;
+        }    
 
         if (data.chunkMapPoint.blocked.value)
         {
